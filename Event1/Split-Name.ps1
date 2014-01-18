@@ -16,6 +16,8 @@ Param
 Begin {}
 Process 
     {
+        $names = $names | Get-RandomArray 
+        ### Reusing get-randomarray to really break up the order We'll need to ensure we use a module file or defined all functions first
         $count = $names.Count
         if (($count % 2) -ne 0)
             {
@@ -60,73 +62,5 @@ End
                 $b += ,$pair
             }
         $a,$b
-    }
-}
-
-function Set-RandomArray 
-{
-<#
-
-#>
-[cmdletbinding()]
-Param 
-    (
-        [System.Object[]]$array
-    )
-process 
-    {
-        $array | Get-Random -Count $array.Count
-    }
-}
-
-Function New-Team
-{
-Param
-    (
-        [System.Object[]]$Keys,
-        [System.Object[]]$Values
-    )
-Begin {}
-Process 
-    {
-        $hash = @{}
-        $i = 0
-        $Keys | foreach {$hash.Add($_,$Values[$i]) ; $i++}
-    }
-End
-    {
-        $hash
-    }
-}
-
-function Test-History
-{
-<##>
-[cmdletbinding()]
-Param 
-    (
-        [System.Collections.Hashtable]$Pairs,
-        [System.Collections.Hashtable[]]$oldpairs
-    )
-Begin {}
-Process 
-    {
-        Foreach ($o in $oldpairs)
-            {
-                if ($bad) {break}
-                foreach ($p in $Pairs.GetEnumerator())
-                    {
-                        If ($p -in $o.GetEnumerator())
-                            {
-                                $bad = $true
-                                break
-                            }
-                    }
-            }
-    }
-end 
-    {
-        if ($bad) {$true}
-        else {$false}
     }
 }
