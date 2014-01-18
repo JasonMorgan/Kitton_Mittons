@@ -44,7 +44,7 @@ Output: two ordered lists
 }
 
 function AssignPairs
-{
+{ # will be incorporated into randomize lists
 input: Two ordered lists
 Output: [hashtable]
 }
