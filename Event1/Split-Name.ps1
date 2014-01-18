@@ -20,10 +20,10 @@ Process
         if (($count % 2) -ne 0)
             {
                 switch (Read-Host "Uneven numbers of entries found:
-                        Y - Select Y to have pair automatically assigned 
-                        N - select N to abort the operation 
-                        V - Select V to view a list of users
-                        Select Y, N, or V"
+Y - Select Y to have pair automatically assigned 
+N - select N to abort the operation 
+V - Select V to view a list of users and select the users to be grouped together
+Select Y, N, or V"
                     )
                     {
                         'Y' {$odd = $true}
@@ -31,30 +31,60 @@ Process
                         'V' { 
                                 $pair = $names | Out-GridView -OutputMode Multiple -Title "Please select 2 names from the following list, then click 'Ok'"
                                 if ($pair.count -ne 2) { Throw "You may only select 2 names to be paired"} 
-                                $names = ($names | where {$_ -notin $pair}),$pair
+                                $names = ($names | where {$_ -notin $pair})
+                                $names += ,$pair
                             }
                         default {break}    
                     }
             }
         $a = @()
         $b = @()
+        if ($odd) { $double = @() }
         Foreach ($n in $names)
             {
-                if ($odd) 
-                    {
-
-                    }
+                
                 if ($n.primary) {$a += $n}
-                if ($a.Count -lt ($count/2)) {$a += $n}
-                else {$b += $n}
+                if ($a.Count -lt ([int]($count/2))) {$a += $n}
+                else 
+                    {
+                       $b += $n 
+                    }
             }
     }
-End {$a,$b}
+End 
+    {
+        if ($odd)
+            {
+                $pair = $b | Get-Random -Count 2
+                $b = ($b | where {$_ -notin $pair})
+                $b += ,$pair
+            }
+        $a,$b
+    }
+}
+
+function Set-RandomArray 
+{
+<#
+
+#>
+[cmdletbinding()]
+Param 
+    (
+        [System.Object[]]$array
+    )
+$array | Get-Random -Count $array.Count
 }
 
 Function Combine
 {
+Param
+    (
+        [System.Object[]]$Keys,
+        [System.Object[]]$Values
+    )
 $hash = @{}
 $i = 0
-(Split-Name -names a,b,c,d,e,f,g,h)[0] | foreach {$hash.Add($_,(Split-Name -names a,b,c,d,e,f,g,h)[1][$i]) ; $i++}
+$Keys | foreach {$hash.Add($_,$Values[$i]) ; $i++}
 }
+
