@@ -26,7 +26,7 @@ function Create-NameObject
                    )]
         [ValidateNotNull()]
         [ValidateNotNullOrEmpty()]
-        [string]$Filepath
+        [string]$path
 
     )
 
@@ -38,18 +38,18 @@ function Create-NameObject
     Write-Verbose "Test file path"
         do
         {
-         if(Test-Path $Filepath)
+         if(Test-Path $path)
             {$validatefile = $true}
          else 
             {
             $validatefile = $false
-            $filepath = Read-Host "$Filepath is not valid, Please enter valid file name"
+            $path = Read-Host "$path is not valid, Please enter valid file name"
             }
          } 
         until ($validatefile -eq $true)
 
-       $users =  Import-csv $Filepath 
-       $users | Out-GridView
+       $users =  Import-csv $path 
+       $users 
     }
     End
     {
