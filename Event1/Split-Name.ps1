@@ -1,4 +1,5 @@
 ﻿function Split-Name  ### Will need to find a way to determine how to pair a particular user with 2 partners, consider setting a flag for later of an operation in the end block
+### Will also need to find a way to sort by primary type
 {
 <#
 .INPUTS
