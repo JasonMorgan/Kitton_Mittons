@@ -16,7 +16,7 @@ Param
 Begin {}
 Process 
     {
-        $names = $names | Get-RandomArray 
+        $names = $names | Get-RandomArray # add | sort by primary so primaries always come first
         ### Reusing get-randomarray to really break up the order We'll need to ensure we use a module file or defined all functions first
         $count = $names.Count
         if (($count % 2) -ne 0)

@@ -1,4 +1,6 @@
-﻿<#
+﻿function Create-NameObject
+{
+<#
 .Synopsis
    Imports CSV file
 .DESCRIPTION
@@ -13,8 +15,6 @@
    array to include fullname, email, and and Priority Partner Status
 
 #>
-function Create-NameObject
-{
     [CmdletBinding()]
     Param
     (

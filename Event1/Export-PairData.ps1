@@ -3,13 +3,13 @@ Function Export-PairData
 [CmdletBinding()]
 Param
     (
-    [sytem.collections.hashtable]$Hash,
+    [system.collections.hashtable]$Hash,
     [string]$Path
     )
 Begin{}
 Process
     {
-    $Hash | Export-Clixml -Path $Path\Data_$(Get-Date -Format MM_DD_YY)
+    $Hash | Export-Clixml -Path $Path\Data_$(Get-Date -Format MM_DD_YY).xml
     }
 End{}
 }
