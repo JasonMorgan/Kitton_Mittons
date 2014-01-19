@@ -299,7 +299,7 @@ Process
                 $value = Get-RandomArray -array $value
                 $hash = New-Team -Keys $key -Values $value
             }
-        Until (Test-History -Pairs $hash -oldpairs $History)
+        Until (Test-History -Pairs $hash -oldpairs $History) ### this loop probably isn't required for this draft.  It's mostly in to test logic
     }
 End 
     {
