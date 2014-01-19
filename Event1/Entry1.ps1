@@ -33,7 +33,7 @@ Param
 Begin {}
 Process 
     {
-        $names = $names | Get-RandomArray # add | sort by primary so primaries always come first
+        $names = Get-RandomArray -array $names # add | sort by primary so primaries always come first
         ### Reusing get-randomarray to really break up the order We'll need to ensure we use a module file or defined all functions first
         $count = $names.Count
         if (($count % 2) -ne 0)
@@ -97,9 +97,11 @@ Process
         Foreach ($o in $oldpairs)
             {
                 if ($bad) {break}
+                $invert = @{}
+                $o.GetEnumerator() | foreach { $invert.add($_.value,$_.key)}
                 foreach ($p in $Pairs.GetEnumerator())
                     {
-                        If ($p -in $o.GetEnumerator())
+                        If (($p -in $o.GetEnumerator()) -or ($p -in $invert.GetEnumerator()) )
                             {
                                 $bad = $true
                                 break
@@ -293,11 +295,14 @@ Process
         $key,$value = Split-Name -names $names
         $History = Import-PairData -Path $path
         $hash = @{}
+        $i = 0
         do 
             {
                 $key = Get-RandomArray -array $key
                 $value = Get-RandomArray -array $value
                 $hash = New-Team -Keys $key -Values $value
+                $i++
+                Write-Warning "had to run $i times"
             }
         Until (Test-History -Pairs $hash -oldpairs $History) ### this loop probably isn't required for this draft.  It's mostly in to test logic
     }
