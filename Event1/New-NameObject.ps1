@@ -1,4 +1,4 @@
-﻿function Create-NameObject
+﻿function New-NameObject
 {
 <#
 .Synopsis
