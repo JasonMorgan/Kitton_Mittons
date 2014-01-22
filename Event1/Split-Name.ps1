@@ -19,6 +19,7 @@ Process
     {
         $names = $names | Get-RandomArray # add | sort by primary so primaries always come first
         ### Reusing get-randomarray to really break up the order We'll need to ensure we use a module file or defined all functions first
+        #if (Get-ItemProperty -Name Primary - ## test property
         $count = $names.Count
         if (($count % 2) -ne 0)
             {
@@ -26,6 +27,7 @@ Process
 Y - Select Y to have pair automatically assigned 
 N - select N to abort the operation 
 V - Select V to view a list of users and select the users to be grouped together
+U - Select U to manually assign an individual to be paired with two users
 Select Y, N, or V"
                     )
                     {
@@ -37,20 +39,26 @@ Select Y, N, or V"
                                 $names = ($names | where {$_ -notin $pair})
                                 $names += ,$pair
                             }
+                        'U' {
+                                $specialpair = $true
+                                $lead = $names | Out-GridView -OutputMode Single -Title "Please select the individual who will be paired with a two users then click 'Ok'"
+                                $names = ($names | where {$_ -notin $lead})
+                                $names += $lead 
+                            }
                         default {break}    
                     }
             }
-        $a = @()
-        $b = @()
+        $key = @()
+        $Value = @()
         if ($odd) { $double = @() }
         Foreach ($n in $names)
             {
                 
-                if ($n.primary) {$a += $n}
-                if ($a.Count -lt ([int]($count/2))) {$a += $n}
+                if ($n.primary) {$key += $n}
+                if ($key.Count -lt ([int]($count/2))) {$key += $n}
                 else 
                     {
-                       $b += $n 
+                       $Value += $n 
                     }
             }
     }
@@ -58,10 +66,12 @@ End
     {
         if ($odd)
             {
-                $pair = $b | Get-Random -Count 2
-                $b = ($b | where {$_ -notin $pair})
-                $b += ,$pair
+                $pair = $Value | Get-Random -Count 2
+                $Value = ($Value | where {$_ -notin $pair})
+                $Value += ,$pair
             }
-        $a,$b
+        if ($specialpair)
+            {$key,$Value,$pair}
+        Else {$Key,$Value}
     }
 }

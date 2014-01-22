@@ -608,23 +608,23 @@
     </Color>
     <Color>
       <A>255</A>
-      <R>128</R>
-      <G>128</G>
-      <B>128</B>
+      <R>124</R>
+      <G>252</G>
+      <B>0</B>
       <ScA>1</ScA>
-      <ScR>0.2158605</ScR>
-      <ScG>0.2158605</ScG>
-      <ScB>0.2158605</ScB>
+      <ScR>0.20155625</ScR>
+      <ScG>0.9734453</ScG>
+      <ScB>0</ScB>
     </Color>
     <Color>
       <A>255</A>
-      <R>0</R>
-      <G>0</G>
-      <B>139</B>
+      <R>255</R>
+      <G>140</G>
+      <B>0</B>
       <ScA>1</ScA>
-      <ScR>0</ScR>
-      <ScG>0</ScG>
-      <ScB>0.258182853</ScB>
+      <ScR>1</ScR>
+      <ScG>0.262250662</ScG>
+      <ScB>0</ScB>
     </Color>
     <Color>
       <A>255</A>
@@ -699,61 +699,21 @@
     <Color>
       <A>255</A>
       <R>255</R>
-      <G>140</G>
+      <G>255</G>
       <B>0</B>
       <ScA>1</ScA>
       <ScR>1</ScR>
-      <ScG>0.262250662</ScG>
+      <ScG>1</ScG>
       <ScB>0</ScB>
     </Color>
     <Color>
       <A>255</A>
-      <R>0</R>
-      <G>0</G>
-      <B>255</B>
-      <ScA>1</ScA>
-      <ScR>0</ScR>
-      <ScG>0</ScG>
-      <ScB>1</ScB>
-    </Color>
-    <Color>
-      <A>255</A>
-      <R>0</R>
-      <G>0</G>
+      <R>255</R>
+      <G>69</G>
       <B>0</B>
       <ScA>1</ScA>
-      <ScR>0</ScR>
-      <ScG>0</ScG>
-      <ScB>0</ScB>
-    </Color>
-    <Color>
-      <A>255</A>
-      <R>139</R>
-      <G>0</G>
-      <B>0</B>
-      <ScA>1</ScA>
-      <ScR>0.258182853</ScR>
-      <ScG>0</ScG>
-      <ScB>0</ScB>
-    </Color>
-    <Color>
-      <A>255</A>
-      <R>0</R>
-      <G>0</G>
-      <B>0</B>
-      <ScA>1</ScA>
-      <ScR>0</ScR>
-      <ScG>0</ScG>
-      <ScB>0</ScB>
-    </Color>
-    <Color>
-      <A>255</A>
-      <R>0</R>
-      <G>0</G>
-      <B>0</B>
-      <ScA>1</ScA>
-      <ScR>0</ScR>
-      <ScG>0</ScG>
+      <ScR>1</ScR>
+      <ScG>0.0595112368</ScG>
       <ScB>0</ScB>
     </Color>
     <Color>
@@ -790,11 +750,11 @@
       <A>255</A>
       <R>0</R>
       <G>0</G>
-      <B>139</B>
+      <B>0</B>
       <ScA>1</ScA>
       <ScR>0</ScR>
       <ScG>0</ScG>
-      <ScB>0.258182853</ScB>
+      <ScB>0</ScB>
     </Color>
     <Color>
       <A>255</A>
@@ -806,12 +766,48 @@
       <ScG>0</ScG>
       <ScB>0</ScB>
     </Color>
+    <Color>
+      <A>255</A>
+      <R>0</R>
+      <G>191</G>
+      <B>255</B>
+      <ScA>1</ScA>
+      <ScR>0</ScR>
+      <ScG>0.520995557</ScG>
+      <ScB>1</ScB>
+    </Color>
+    <Color>
+      <A>255</A>
+      <R>0</R>
+      <G>0</G>
+      <B>0</B>
+      <ScA>1</ScA>
+      <ScR>0</ScR>
+      <ScG>0</ScG>
+      <ScB>0</ScB>
+    </Color>
+    <Color>
+      <A>255</A>
+      <R>255</R>
+      <G>255</G>
+      <B>0</B>
+      <ScA>1</ScA>
+      <ScR>1</ScR>
+      <ScG>1</ScG>
+      <ScB>0</ScB>
+    </Color>
+    <Color>
+      <A>255</A>
+      <R>0</R>
+      <G>255</G>
+      <B>127</B>
+      <ScA>1</ScA>
+      <ScR>0</ScR>
+      <ScG>1</ScG>
+      <ScB>0.212230757</ScB>
+    </Color>
   </Values>
   <Name>(Customized Theme)</Name>
   <FontFamily>Lucida Console</FontFamily>
   <FontSize>11</FontSize>
-<<<<<<< HEAD
 </StorableColorTheme>
-=======
-</StorableColorTheme>
->>>>>>> ae667a39c1682c7b502cf60d091c3d2f98268834
