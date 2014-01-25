@@ -2,119 +2,10 @@
 <#Script for Manager#>
 Param 
     (
-        [string[]]$names = @('Syed', 'Kim', 'Sam', 'Hazem', 'Pilar', 'Terry', 'Amy', 'Greg', 'Pamela', 'Julie', 'David', 'Robert', 'Shai', 'Ann', 'Mason', 'Sharon'),
-        [string]$path = "$env:USERPROFILE\Documents\AssignTeams",
-        [switch]$store
+        [string[]]$names = @('Syed', 'Kim', 'Sam', 'Hazem', 'Pilar', 'Terry', 'Amy', 'Greg', 'Pamela', 'Julie', 'David', 'Robert', 'Shai', 'Ann', 'Mason', 'Sharon')
     )
-Begin 
-    {
-        If (-not(Test-Path $path))
-            {
-                Write-Verbose "Create storage directory"
-                New-Item $path -ItemType directory -Force | Out-Null
-            }
-        Write-Verbose "Define Functions"
-#split-name
-function Split-Name
-{
-<#
-.INPUTS
-Single Array
-
-.OUTPUTS
-two Arrays
-
-#>
-[cmdletbinding()]
-Param 
-    (
-        [System.Object[]]$names
-    )
-Begin {}
-Process 
-    {
-        $names = Get-RandomArray -array $names # add | sort by primary so primaries always come first
-        ### Reusing get-randomarray to really break up the order We'll need to ensure we use a module file or defined all functions first
-        $count = $names.Count
-        if (($count % 2) -ne 0)
-            {
-                switch (Read-Host "Uneven numbers of entries found:
-Y - Select Y to have pair automatically assigned 
-N - select N to abort the operation 
-V - Select V to view a list of users and select the users to be grouped together
-Select Y, N, or V"
-                    )
-                    {
-                        'Y' {$odd = $true}
-                        'N' {Throw "Operation aborted by $env:USERNAME"}
-                        'V' { 
-                                $pair = $names | Out-GridView -OutputMode Multiple -Title "Please select 2 names from the following list, then click 'Ok'"
-                                if ($pair.count -ne 2) { Throw "You may only select 2 names to be paired"} 
-                                $names = ($names | where {$_ -notin $pair})
-                                $names += ,$pair
-                            }
-                        default {break}    
-                    }
-            }
-        $a = @()
-        $b = @()
-        if ($odd) { $double = @() }
-        Foreach ($n in $names)
-            {
-                
-                if ($n.primary) {$a += $n}
-                if ($a.Count -lt ([int]($count/2))) {$a += $n}
-                else 
-                    {
-                       $b += $n 
-                    }
-            }
-    }
-End 
-    {
-        if ($odd)
-            {
-                $pair = $b | Get-Random -Count 2
-                $b = ($b | where {$_ -notin $pair})
-                $b += ,$pair
-            }
-        $a,$b
-    }
-}
-#test-history
-function Test-History
-{
-<##>
-[cmdletbinding()]
-Param 
-    (
-        [System.Collections.Hashtable]$Pairs,
-        [System.Collections.Hashtable[]]$oldpairs
-    )
-Begin {}
-Process 
-    {
-        Foreach ($o in $oldpairs)
-            {
-                if ($bad) {break}
-                $invert = @{}
-                $o.GetEnumerator() | foreach { $invert.add($_.value,$_.key)}
-                foreach ($p in $Pairs.GetEnumerator())
-                    {
-                        If (($p -in $o.GetEnumerator()) -or ($p -in $invert.GetEnumerator()) )
-                            {
-                                $bad = $true
-                                break
-                            }
-                    }
-            }
-    }
-end 
-    {
-        if ($bad) {$false}
-        else {$true}
-    }
-}
+Write-Verbose "Define Functions"
+#region DefineFunctions
 #Get-RandomArray
 function Get-RandomArray 
 {
@@ -124,6 +15,10 @@ function Get-RandomArray
 [cmdletbinding()]
 Param 
     (
+        [parameter(Mandatory=$true,
+        ValueFromPipeline=$true, 
+        ValueFromPipelineByPropertyName=$True,
+        HelpMessage="Enter an array object to be randomized")]
         [System.Object[]]$array
     )
 process 
@@ -134,183 +29,100 @@ process
 #New-Team
 Function New-Team
 {
+<##>
+[cmdletbinding()]
 Param
     (
-        [System.Object[]]$Keys,
-        [System.Object[]]$Values
+        [Parameter(Mandatory=$true,
+        HelpMessage="Input the key object for the hash table")]
+        [System.Object[]]$Key,
+        [Parameter(Mandatory=$true,
+        HelpMessage="input the value object for the hash table")]
+        [System.Object[]]$Value
     )
-Begin {}
-Process 
-    {
-        $hash = @{}
-        $i = 0
-        $Keys | foreach {$hash.Add($_,$Values[$i]) ; $i++}
-    }
-End
-    {
-        $hash
-    }
-}
-#Email-Team
-function Email-Team
-{
-<#
-.Synopsis
-   This emails the Employees.
-.DESCRIPTION
-   This will inform the employess of what team they are on and what teammebers they will be working with.
-.EXAMPLE
-   Email-team
-#>
-    [CmdletBinding()]
-    Param
-    (
-        #param 1 Names of the recipants.
-        [string[]]$name,
-        #param 2 Email of the names
-        [string[]]$EmailAddress,
-        #param 3 Email of Supervisor
-        [string[]]$from = "something@somewhere.com",
-        #param 4 Subjeft of the email
-        [string[]]$subject = 'something',
-        #
-        [string]$PMAddress = "PM@company.com"
-    )
-
- Begin{}
-Process
-    {
-        $body = @"
-Hello,
-The following people are now on the same team:
- 
-    $($name | ForEach-Object {$_+"`n"})
-All the above have been sent a copy of this email.
-"@
-        $emailparams = @{
-                To = $EmailAddress,$PMAddress
-                From = $from
-                SMTPServer = $SMTPServer
-                Subject = $subject
-                Body = $body
-            }
-        Send-MailMessage @emailparams
-    }
-End{}
-}
-#Create-NameObject
-function Create-NameObject
-{
-<#
-.Synopsis
-   Imports CSV file
-.DESCRIPTION
-   Inputs .csv file
-.EXAMPLE
-   Example of how to use this cmdlet
-.EXAMPLE
-   Another example of how to use this cmdlet
-.INPUTS
-   .csv filepath
-.OUTPUTS
-   array to include fullname, email, and and Priority Partner Status
-
-#>
-    [CmdletBinding()]
-    Param
-    (
-        #Path to .csv file
-        [Parameter(Mandatory=$true, 
-                   ValueFromPipeline=$true,
-                   ValueFromPipelineByPropertyName=$true, 
-                   Position=0
-                   )]
-        [ValidateNotNull()]
-        [ValidateNotNullOrEmpty()]
-        [string]$Filepath
-
-    )
-
-    Begin
-    {
-    }
-    Process
-    {
-    Write-Verbose "Test file path"
-        do
-        {
-         if(Test-Path $Filepath)
-            {$validatefile = $true}
-         else 
-            {
-            $validatefile = $false
-            $filepath = Read-Host "$Filepath is not valid, Please enter valid file name"
-            }
-         } 
-        until ($validatefile -eq $true)
-
-       $users =  Import-csv $Filepath 
-       $users | Out-GridView
-    }
-    End
-    {
-    }
-}
-# Export-PairData
-Function Export-PairData
-{
-[CmdletBinding()]
-Param
-    (
-    [system.collections.hashtable]$Hash,
-    [string]$Path
-    )
-Begin{}
-Process
-    {
-    $Hash | Export-Clixml -Path $Path\Data_$(Get-Date -Format MM_DD_YY).xml
-    }
-End{}
-}
-#Import-PairData
-Function Import-PairData
-{
-[CmdletBinding()]
-Param
-    (
-    [string]$Path,
-    [string]$Count=4
-    )
-Begin{}
-Process
-    {
-    Get-ChildItem -Directory $Path | Select-Object -Last $Count | Import-Clixml -Path $Path 
-    }
-End{}
+if ($Key.Count -ne $Value.Count)
+    {Throw "The key and value entries are unequal, unable to continue this function"}
+$hash = @{}
+$i = 0
+$Key | foreach {$hash.Add($_,$Value[$i]) ; $i++}
+$hash
 }
 Write-Verbose "Finished defining functions"
-    }
-Process
+#endregion DefineFunctions
+
+#region split_names
+Write-Verbose "Splitting name entries"
+$names = $names | Get-RandomArray
+    if (($names.Count % 2) -ne 0)
+        {
+            switch (Read-Host "Uneven numbers of entries found:
+Y - Select Y to have a pair automatically assigned 
+N - select N to abort the operation 
+V - Select V to view a list of users and select the users to be grouped together
+U - Select U to manually assign an individual to be paired with two users
+Select Y, N, V, or U"
+                )
+                {
+                    'Y' {
+                            Write-Verbose "Auto assign 3 person team"
+                            $odd = $true
+                            $lead = $names | Get-Random -Count 1
+                            $names = ($names | where {$_ -notin $lead})
+                            Write-Verbose "The lead in the 3 person team is $lead"
+                        }
+                    'N' {Throw "Operation aborted by $env:USERNAME"}
+                    'V' { 
+                            $pair = $names | Out-GridView -OutputMode Multiple -Title "Please select 2 names from the following list, then click 'Ok'"
+                            if ($pair.count -ne 2) { Throw "You must select 2 names to be paired"} 
+                            $names = ($names | where {$_ -notin $pair})
+                            $names += ,$pair
+                        }
+                    'U' {
+                            Write-Verbose "Manually select leader of 3 person team"
+                            $lead = $names | Out-GridView -OutputMode Single -Title "Please select the individual who will be paired with a two users then click 'Ok'"
+                            $names = ($names | where {$_ -notin $lead})
+                            $odd = $true
+                            Write-Verbose "The lead in the 3 person team is $lead"
+                        }
+                    default {Throw "Operation aborted by $env:USERNAME"}    
+                }
+        }
+    $key = @()
+    $value = @()
+    if ($odd)
+        {
+            Write-Verbose "Splitting off double partner from `$names"
+            $double = $names | Get-Random -Count 2
+            $names = ($names | where {$_ -notin $pair})
+        }
+    Write-verbose "Splitting name array into new arrays"
+    Foreach ($n in $names)
+        {
+            if ($key.Count -lt ($names.Count/2)) 
+                {
+                    Write-Verbose "Adding $n to `$key array"
+                    $key += $n
+                }
+            else 
+                {
+                    Write-Verbose "Adding $n to `$value array"
+                    $value += $n 
+                }
+        }
+Write-Verbose "Done Splitting names"
+#endregion split_names
+#region Randomize and assign
+Write-Verbose "Randomize `$key"
+$key = Get-RandomArray -array $key
+Write-Verbose "Randomize `$value"
+$value = Get-RandomArray -array $value
+Write-Verbose "Creating pairs"
+$hash = New-Team -Key $key -Value $value
+if ($odd)
     {
-        $key,$value = Split-Name -names $names
-        $History = Import-PairData -Path $path
-        $hash = @{}
-        $i = 0
-        do 
-            {
-                $key = Get-RandomArray -array $key
-                $value = Get-RandomArray -array $value
-                $hash = New-Team -Keys $key -Values $value
-                $i++
-                Write-Warning "had to run $i times"
-            }
-        Until (Test-History -Pairs $hash -oldpairs $History) ### this loop probably isn't required for this draft.  It's mostly in to test logic
+        Write-Verbose "Add special pair to teams"
+        $hash.add($lead,$double)
     }
-End 
-    {
-        $hash.GetEnumerator() | foreach {"$($_.Key),$($_.Value)"}
-        if ($store)
-            {
-                Export-PairData -Hash $hash -Path $path
-            }
-    }
+#endregion Randomize and assign
+Write-Verbose "Display content"
+$hash.GetEnumerator() | foreach {"$($_.Key),$($_.Value)"}
