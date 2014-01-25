@@ -29,7 +29,7 @@ Last Modified: 1/25/2014
 
 #>
 [cmdletbinding(DefaultParameterSetName="Default")]
-Param ## Add aditional parameter set
+Param
     (
         # Please enter the path to a .csv file containing names to be paired
         [Parameter(Mandatory=$true,
@@ -72,6 +72,7 @@ Param ## Add aditional parameter set
         HelpMessage="Please specify the SMTP Server to be used for the email notification.  If you are unsure what SMTP server to use please contact the helpdesk at (877) 555-HELP")]
         [string]$SMTPServer 
     )
+
 #region ImportModule
 Write-Verbose "Importing Pairs module"
 Try {Import-Module Pairs -ErrorAction Stop} 
@@ -81,7 +82,7 @@ Catch {Throw "Unable to load pairs module, please ensure that the Pairs.psm1 fil
 #region CreateNames
 If (compare -ReferenceObject (Get-Content -TotalCount 1 -Path $Path).Split(',') -DifferenceObject @("Name","Email","Primary"))
     {
-        Throw "The CSV file specificied to -Path was invalid.  Please review the Readme.txt file in order to view the approved header names and valuesfor your csv file"
+        Throw "The CSV file specificied to -Path was invalid.  Please review the Readme.txt file in order to view the approved header names and values for your csv file"
     }
 Try {$names = Import-Csv -Path $Path -ErrorAction Stop}
 Catch {
@@ -99,40 +100,51 @@ if (($names.Count % 2) -ne 0)
 Y - Select Y to have a pair automatically assigned 
 N - select N to abort the operation 
 V - Select V to view a list of users and select the users to be grouped together
-M - Select U to manually assign an individual to be paired with two users
+M - Select M to manually assign an individual to be paired with two users
 Select Y, N, V, or M"
             )
             {
                 'Y' {
                         Write-Verbose "Auto assign 3 person team"
+                        Write-Verbose "Set `$odd flag"
                         $odd = $true
+                        Write-Verbose "Selecting `$lead"
                         $lead = $names | Get-Random -Count 1
+                        Write-Verbose "Rebuiling `$names without `$lead"
                         $names = ($names | where {$_ -notin $lead})
                         Write-Verbose "The lead in the 3 person team is $lead"
                     }
                 'N' {Throw "Operation aborted by $env:USERNAME"}
                 'V' { 
+                        Write-Verbose "Sending names to $env:USERNAME for selection, new variable `$pair to be created"
                         $pair = $names | Out-GridView -OutputMode Multiple -Title "Please select 2 names from the following list, then click 'Ok'"
+                        Write-Verbose "Testing `$pair count"
                         if ($pair.count -ne 2) { Throw "You must select 2 names to be paired"} 
+                        Write-Verbose "Rebuiling `$names without `$Pair"
                         $names = ($names | where {$_ -notin $pair})
+                        Write-Verbose "Adding `$pair to `$names as a single entry"
                         $names += ,$pair
                     }
                 'M' {
                         Write-Verbose "Manually select leader of 3 person team"
                         $lead = $names | Out-GridView -OutputMode Single -Title "Please select the individual who will be paired with a two users then click 'Ok'"
+                        Write-Verbose "Rebuiling `$names without `$lead"
                         $names = ($names | where {$_ -notin $lead})
+                        Write-Verbose "Set `$odd flag"
                         $odd = $true
                         Write-Verbose "The lead in the 3 person team is $lead"
                     }
-                default {Throw "Operation aborted by $env:USERNAME"}    
+                default {Throw "Operation aborted due to invalid selection"}    
             }
     }
+Write-Verbose "Building empty arrays"
 $key = @()
 $value = @()
 if ($odd)
     {
         Write-Verbose "Splitting off double partner from `$names"
         $double = $names | Get-Random -Count 2
+        Write-Verbose "Rebuiling `$names without `$double"
         $names = ($names | where {$_ -notin $double})
     }
 Write-verbose "Splitting name array into new arrays"
@@ -165,7 +177,11 @@ do
         Write-Verbose "Randomize `$value"
         $value = ,$value | Get-RandomArray
         Write-Verbose "Creating pairs"
-        $hash = New-Team -Key $key -Value $value
+        Try {$hash = New-Team -Key $key -Value $value -ErrorAction Stop}
+        Catch {
+                Write-Warning "Creating the pairs failed, the operation will be aborted"
+                Throw "Unable to build hashtable, please ensure you don't have any duplicate names in your input file"
+            }
         $i++
     }
 Until (Test-History -Pairs $hash -oldpairs $History) 

@@ -1,0 +1,1 @@
+Powershell.exe -file %cd%\install.ps1

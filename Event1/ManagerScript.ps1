@@ -51,55 +51,68 @@ Param
         [ValidateCount(2,999999)]
         [string[]]$names = @('Syed', 'Kim', 'Sam', 'Hazem', 'Pilar', 'Terry', 'Amy', 'Greg', 'Pamela', 'Julie', 'David', 'Robert', 'Shai', 'Ann', 'Mason', 'Sharon')
     )
+
 #region ImportModule
 Write-Verbose "Importing Pairs module"
 Try {Import-Module Pairs -ErrorAction Stop} 
 Catch {Throw "Unable to load pairs module, please ensure that the Pairs.psm1 file is loaded in your `$env:PSModulePath"}
 #endregion ImportModule
+
 #region split_names
 Write-Verbose "Splitting name entries"
 $names = ,$names | Get-RandomArray
-    if (($names.Count % 2) -ne 0)
-        {
-            switch (Read-Host "Uneven numbers of entries found:
+if (($names.Count % 2) -ne 0)
+    {
+        switch (Read-Host "Uneven numbers of entries found:
 Y - Select Y to have a pair automatically assigned 
 N - select N to abort the operation 
 V - Select V to view a list of users and select the users to be grouped together
 M - Select M to manually assign an individual to be paired with two users
 Select Y, N, V, or M"
-                )
-                {
-                    'Y' {
-                            Write-Verbose "Auto assign 3 person team"
-                            $odd = $true
-                            $lead = $names | Get-Random -Count 1
-                            $names = ($names | where {$_ -notin $lead})
-                            Write-Verbose "The lead in the 3 person team is $lead"
-                        }
-                    'N' {Throw "Operation aborted by $env:USERNAME"}
-                    'V' { 
-                            $pair = $names | Out-GridView -OutputMode Multiple -Title "Please select 2 names from the following list, then click 'Ok'"
-                            if ($pair.count -ne 2) { Throw "You must select 2 names to be paired"} 
-                            $names = ($names | where {$_ -notin $pair})
-                            $names += ,$pair
-                        }
-                    'M' {
-                            Write-Verbose "Manually select leader of 3 person team"
-                            $lead = $names | Out-GridView -OutputMode Single -Title "Please select the individual who will be paired with a two users then click 'Ok'"
-                            $names = ($names | where {$_ -notin $lead})
-                            $odd = $true
-                            Write-Verbose "The lead in the 3 person team is $lead"
-                        }
-                    default {Throw "Operation aborted by $env:USERNAME"}    
-                }
-        }
-    $key = @()
-    $value = @()
+            )
+            {
+                'Y' {
+                        Write-Verbose "Auto assign 3 person team"
+                        Write-Verbose "Set `$odd flag"
+                        $odd = $true
+                        Write-Verbose "Selecting `$lead"
+                        $lead = $names | Get-Random -Count 1
+                        Write-Verbose "Rebuiling `$names without `$lead"
+                        $names = ($names | where {$_ -notin $lead})
+                        Write-Verbose "The lead in the 3 person team is $lead"
+                    }
+                'N' {Throw "Operation aborted by $env:USERNAME"}
+                'V' { 
+                        Write-Verbose "Sending names to $env:USERNAME for selection, new variable `$pair to be created"
+                        $pair = $names | Out-GridView -OutputMode Multiple -Title "Please select 2 names from the following list, then click 'Ok'"
+                        Write-Verbose "Testing `$pair count"
+                        if ($pair.count -ne 2) { Throw "You must select 2 names to be paired"} 
+                        Write-Verbose "Rebuiling `$names without `$Pair"
+                        $names = ($names | where {$_ -notin $pair})
+                        Write-Verbose "Adding `$pair to `$names as a single entry"
+                        $names += ,$pair
+                    }
+                'M' {
+                        Write-Verbose "Manually select leader of 3 person team"
+                        $lead = $names | Out-GridView -OutputMode Single -Title "Please select the individual who will be paired with a two users then click 'Ok'"
+                        Write-Verbose "Rebuiling `$names without `$lead"
+                        $names = ($names | where {$_ -notin $lead})
+                        Write-Verbose "Set `$odd flag"
+                        $odd = $true
+                        Write-Verbose "The lead in the 3 person team is $lead"
+                    }
+                default {Throw "Operation aborted due to invalid selection"}    
+            }
+    }
+Write-Verbose "Building empty arrays"
+$key = @()
+$value = @()
     if ($odd)
         {
             Write-Verbose "Splitting off double partner from `$names"
             $double = $names | Get-Random -Count 2
-            $names = ($names | where {$_ -notin $pair})
+            Write-Verbose "Rebuiling `$names without `$double"
+            $names = ($names | where {$_ -notin $double})
         }
     Write-verbose "Splitting name array into new arrays"
     Foreach ($n in $names)
@@ -117,18 +130,30 @@ Select Y, N, V, or M"
         }
 Write-Verbose "Done Splitting names"
 #endregion split_names
+
 #region Randomize and assign
 Write-Verbose "Randomize `$key"
 $key = ,$key | Get-RandomArray
 Write-Verbose "Randomize `$value"
 $value = ,$value | Get-RandomArray
 Write-Verbose "Creating pairs"
-$hash = New-Team -Key $key -Value $value
+Try {$hash = New-Team -Key $key -Value $value -ErrorAction Stop}
+Catch {
+        Write-Warning "Creating the pairs failed, the operation will be aborted"
+        Throw "Unable to build hashtable, please ensure you don't have any duplicate names in your input"
+    }
 if ($odd)
     {
         Write-Verbose "Add special pair to teams"
-        $hash.add($lead,$double)
+        Try {$hash.add($lead,$double)}
+        Catch {
+                Write-Warning "Creating the pairs failed, the operation will be aborted"
+                Throw "Unable to build hashtable, please ensure you don't have any duplicate names"
+            }
     }
 #endregion Randomize and assign
+
+#region Display
 Write-Verbose "Display content"
 $hash.GetEnumerator() | foreach {"$($_.Key),$($_.Value)"}
+#endregion Display
