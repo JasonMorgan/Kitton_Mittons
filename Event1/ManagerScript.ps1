@@ -1,7 +1,19 @@
-<##>
+<#
+.SYNOPSIS
+
+.DESCRIPTION
+
+.EXAMPLE
+
+.EXAMPLE
+
+.NOTES
+
+#>
 <#Script for Manager#>
 Param 
     (
+        #Add validation
         [string[]]$names = @('Syed', 'Kim', 'Sam', 'Hazem', 'Pilar', 'Terry', 'Amy', 'Greg', 'Pamela', 'Julie', 'David', 'Robert', 'Shai', 'Ann', 'Mason', 'Sharon')
     )
 Write-Verbose "Define Functions"
@@ -23,6 +35,7 @@ Param
     )
 process 
     {
+        Write-Verbose "Randomizing"
         $array | Get-Random -Count $array.Count
     }
 }
@@ -52,7 +65,7 @@ Write-Verbose "Finished defining functions"
 
 #region split_names
 Write-Verbose "Splitting name entries"
-$names = $names | Get-RandomArray
+$names = ,$names | Get-RandomArray
     if (($names.Count % 2) -ne 0)
         {
             switch (Read-Host "Uneven numbers of entries found:
@@ -113,9 +126,9 @@ Write-Verbose "Done Splitting names"
 #endregion split_names
 #region Randomize and assign
 Write-Verbose "Randomize `$key"
-$key = Get-RandomArray -array $key
+$key = ,$key | Get-RandomArray
 Write-Verbose "Randomize `$value"
-$value = Get-RandomArray -array $value
+$value = ,$value | Get-RandomArray
 Write-Verbose "Creating pairs"
 $hash = New-Team -Key $key -Value $value
 if ($odd)
