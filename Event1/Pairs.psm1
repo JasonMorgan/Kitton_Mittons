@@ -1,8 +1,21 @@
 ﻿<#Pairs Module#>
-
 function Get-RandomArray 
 {
 <#
+.SYNOPSIS
+
+.DESCRIPTION
+
+.EXAMPLE
+
+.EXAMPLE
+
+.NOTES
+Written by the Kitton Mittons
+For the 2014 Winter Scripting Games
+Version 1.1
+Created on: 1/17/2014
+Last Modified: 1/25/2014
 
 #>
 [cmdletbinding()]
@@ -21,9 +34,24 @@ process
     }
 }
 #New-Team
-Function New-Team
+function New-Team
 {
-<##>
+<#
+.SYNOPSIS
+
+.DESCRIPTION
+
+.EXAMPLE
+
+.EXAMPLE
+
+.NOTES
+Written by the Kitton Mittons
+For the 2014 Winter Scripting Games
+Version 1.1
+Created on: 1/17/2014
+Last Modified: 1/25/2014
+#>
 [cmdletbinding()]
 Param
     (
@@ -41,9 +69,25 @@ $i = 0
 $Key | foreach {$hash.Add($_,$Value[$i]) ; $i++}
 $hash
 }
-# Export-PairData
-Function Export-History
+# Export-History
+function Export-History
 {
+<#
+.SYNOPSIS
+
+.DESCRIPTION
+
+.EXAMPLE
+
+.EXAMPLE
+
+.NOTES
+Written by the Kitton Mittons
+For the 2014 Winter Scripting Games
+Version 1.1
+Created on: 1/17/2014
+Last Modified: 1/25/2014
+#>
 [CmdletBinding()]
 Param
     (
@@ -57,9 +101,25 @@ Process
     }
 End{}
 }
-#Import-PairData
-Function Import-History
+#Import-History
+function Import-History
 {
+<#
+.SYNOPSIS
+
+.DESCRIPTION
+
+.EXAMPLE
+
+.EXAMPLE
+
+.NOTES
+Written by the Kitton Mittons
+For the 2014 Winter Scripting Games
+Version 1.1
+Created on: 1/17/2014
+Last Modified: 1/25/2014
+#>
 [CmdletBinding()]
 Param
     (
@@ -71,7 +131,22 @@ Get-ChildItem -Directory $Path -Include *.csv | Select-Object -Last $Count | Imp
 #test-history
 function Test-History
 {
-<##>
+<#
+.SYNOPSIS
+
+.DESCRIPTION
+
+.EXAMPLE
+
+.EXAMPLE
+
+.NOTES
+Written by the Kitton Mittons
+For the 2014 Winter Scripting Games
+Version 1.1
+Created on: 1/17/2014
+Last Modified: 1/25/2014
+#>
 [cmdletbinding()]
 Param 
     (
@@ -102,4 +177,3 @@ end
         else {$true}
     }
 }
-

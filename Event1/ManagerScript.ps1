@@ -23,6 +23,13 @@ Pilar,Sam
 
 Outputs a random pairing of of the names in the $names variable.
 
+.EXAMPLE
+.\ManagerScript.ps1 -names Jane,Jill,John,Edward,Sam,William
+
+John,Edward
+Sam,Jane
+Jill,William
+
 .NOTES
 Written by the Kitton Mittons
 For the 2014 Winter Scripting Games
