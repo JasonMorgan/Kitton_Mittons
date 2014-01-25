@@ -1,6 +1,7 @@
 ﻿<#
 
-.SYNOPSIS  This script creates random name pair assignments with the option of identifying a primary person for a pair
+.SYNOPSIS  
+This script creates random name pair assignments with the option of identifying a primary person for a pair
 
 .DESCRIPTION   
 Accepts a variable number of names, at least 2, and splits them into a random set of pairs. 
@@ -23,34 +24,47 @@ Last Modified: 1/25/2014
 
 
 #>
-[cmdletbinding()]
+[cmdletbinding(DefaultParameterSetName="Default")]
 Param ## Add aditional parameter set
     (
         # Please enter the path to a .csv file containing names to be paired
         [Parameter(Mandatory=$true,
         HelpMessage='Please enter the path to a .csv file containing names to be paired',
         ParameterSetName="Default")]
+        [Parameter(Mandatory=$true,
+        HelpMessage='Please enter the path to a .csv file containing names to be paired',
+        ParameterSetName="notify")]
         [ValidateScript({(Test-Path $_ -PathType leaf) -and ($_.endswith('.csv'))})]
         [string]$Path,
 
         # path to the stored history directory
-        [parameter()]
+        [parameter(ParameterSetName="Default")]
+        [parameter(ParameterSetName="Email")]
         [ValidateScript({Test-Path $_ -PathType Container})]
         [string]$StorePath = "$env:USERPROFILE\Documents\AssignTeams",
 
         # Indicate if historical data should be recorded for this iteration
+        [parameter(ParameterSetName="Default")]
+        [parameter(ParameterSetName="Email")]
         [bool]$store = $true,
         
         # Set if you wish particapants to be notified of their pairings
+        [parameter(ParameterSetName="Email")]
         [switch]$Notify,
 
         # Email address for the PM, use if sending notifications
-        [parameter()]
+        [parameter(ParameterSetName="Email")]
         [string]$PMEmail = "PM@somecorp.com",
 
         # Set to indicate the number of historical runs to compare against the current pairings
+        [parameter(ParameterSetName="Default")]
+        [parameter(ParameterSetName="Email")]
         [int]$count = 4,
 
+        # Specify the SMPTServer information
+        [parameter(Mandatory=$true,
+        ParameterSetName="Email",
+        HelpMessage="Please specify the SMTP Server to be used for the email notification.  If you are unsure what SMTP server to use please contact the helpdesk at (877) 555-HELP")]
         [string]$SMTPServer 
     )
 #region ImportModule
