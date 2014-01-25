@@ -3,20 +3,16 @@
 .SYNOPSIS  This script creates random name pair assignments with the option of identifying a primary person for a pair
 
 .DESCRIPTION   
+Accepts a variable number of names, at least 2, and splits them into a random set of pairs. 
 
-.PARAMTERS
-    -$Path <string>>
-        file path to .csv file containing names to be paired
-
-        Required?               true
-        Default value           $env:USERPROFILE\Documents\Names.csv
-        Accept wildcard  
-
-    -$StorePath <string>
-        path to directo
-.EXAMPLE  
+.EXAMPLE 
+.\PMScript.ps1 -path c:\Project\developers.csv 
 
 .EXAMPLE
+.\PMScript.ps1 -path c:\Project\developers.csv 
+
+.EXAMPLE
+.\PMScript.ps1 -path c:\Project\developers.csv -Store True  -Notify True -
 
 .NOTES
 Written by the Kitton Mittons
@@ -24,7 +20,6 @@ For the 2014 Winter Scripting Games
 Version 1.1
 Created on: 1/17/2014
 Last Modified: 1/25/2014
-
 
 
 #>
@@ -37,15 +32,23 @@ Param
         [Parameter(Mandatory=$true,)
         [string]$Path = "$env:USERPROFILE\Documents\Names.csv",
 
-        # path to directory to 
+        # path to directory that stores the CliXML files to track historic team results
         [parameter()]
-
         [string]$StorePath = "$env:USERPROFILE\Documents\AssignTeams",
 
-
+        # True False to determine if script will run for the Project Manager
+        [parameter()]
         [bool]$store = $true,
+        
+        # True False to determine if email will be sent to team particpants
+        [parameter()]
         [switch]$Notify,
+
+        # Project Manager email address
+        [parameter()]
         [string]$PMEmail = "PM@somecorp.com",
+
+        # 
         [int]$count = 4
     )
 #####
