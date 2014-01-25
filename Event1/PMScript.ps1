@@ -1,10 +1,48 @@
-﻿<##>
+﻿<#
+
+.SYNOPSIS  This script creates random name pair assignments with the option of identifying a primary person for a pair
+
+.DESCRIPTION   
+
+.PARAMTERS
+    -$Path <string>>
+        file path to .csv file containing names to be paired
+
+        Required?               true
+        Default value           $env:USERPROFILE\Documents\Names.csv
+        Accept wildcard  
+
+    -$StorePath <string>
+        path to directo
+.EXAMPLE  
+
+.EXAMPLE
+
+.NOTES
+Written by the Kitton Mittons
+For the 2014 Winter Scripting Games
+Version 1.1
+Created on: 1/17/2014
+Last Modified: 1/25/2014
+
+
+
+#>
 <#Script for PM#>
 Param 
     (
         # Add Validation
+
+        # file path to .csv file containing names to be paired
+        [Parameter(Mandatory=$true,)
         [string]$Path = "$env:USERPROFILE\Documents\Names.csv",
-        [string]$Storepath = "$env:USERPROFILE\Documents\AssignTeams",
+
+        # path to directory to 
+        [parameter()]
+
+        [string]$StorePath = "$env:USERPROFILE\Documents\AssignTeams",
+
+
         [bool]$store = $true,
         [switch]$Notify,
         [string]$PMEmail = "PM@somecorp.com",
@@ -32,8 +70,8 @@ if (($names.Count % 2) -ne 0)
 Y - Select Y to have a pair automatically assigned 
 N - select N to abort the operation 
 V - Select V to view a list of users and select the users to be grouped together
-U - Select U to manually assign an individual to be paired with two users
-Select Y, N, V, or U"
+M - Select U to manually assign an individual to be paired with two users
+Select Y, N, V, or M"
             )
             {
                 'Y' {
@@ -50,7 +88,7 @@ Select Y, N, V, or U"
                         $names = ($names | where {$_ -notin $pair})
                         $names += ,$pair
                     }
-                'U' {
+                'M' {
                         Write-Verbose "Manually select leader of 3 person team"
                         $lead = $names | Out-GridView -OutputMode Single -Title "Please select the individual who will be paired with a two users then click 'Ok'"
                         $names = ($names | where {$_ -notin $lead})
