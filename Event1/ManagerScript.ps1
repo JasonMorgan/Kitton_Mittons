@@ -30,6 +30,11 @@ John,Edward
 Sam,Jane
 Jill,William
 
+.EXAMPLE
+.\ManagerScript.ps1 -names (get-content .\names.txt)
+
+Outputs a random pairing of the names from the names.txt file
+
 .NOTES
 Written by the Kitton Mittons
 For the 2014 Winter Scripting Games
