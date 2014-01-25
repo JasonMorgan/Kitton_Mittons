@@ -18,7 +18,7 @@ Param
         $path = "$env:USERPROFILE\Documents\Pairs"
     )
 New-Item -ItemType directory -Path $path\store -Force | Out-Null
-Copy-Item -Path .\SecretSanta.ps1,DeveloperPairs.ps1 -Destination $path -Force
+Copy-Item -Path .\SecretSanta.ps1,.\DeveloperPairs.ps1 -Destination $path -Force
 New-Item -ItemType directory -Path $env:USERPROFILE\WindowsPowerShell\Modules\Pairs -Force
 copy -path .\Pairs.psm1 -Destination $env:USERPROFILE\WindowsPowerShell\Modules\Pairs -Force
 exit $LASTEXITCODE
