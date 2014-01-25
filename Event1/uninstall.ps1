@@ -17,6 +17,6 @@ Param
     (
         $path = "$env:USERPROFILE\Documents\Pairs"
     )
-Remove-Item $path -Recurse
-Remove-Item $env:USERPROFILE\WindowsPowerShell\Modules\Pairs -Recurse
+Remove-Item $path -Recurse -Force
+Remove-Item $env:USERPROFILE\Documents\WindowsPowerShell\Modules\Pairs -Recurse -Force
 exit $LASTEXITCODE

@@ -45,7 +45,7 @@ Param
         [parameter(ParameterSetName="Default")]
         [parameter(ParameterSetName="Email")]
         [ValidateScript({Test-Path $_ -PathType Container})]
-        [string]$StorePath = "$env:USERPROFILE\Documents\AssignTeams",
+        [string]$StorePath = "$env:USERPROFILE\Documents\Pairs\Store",
 
         # Indicate if historical data should be recorded for this iteration
         [parameter(ParameterSetName="Default")]
@@ -84,7 +84,7 @@ If (compare -ReferenceObject (Get-Content -TotalCount 1 -Path $Path).Split(',') 
     {
         Throw "The CSV file specificied to -Path was invalid.  Please review the Readme.txt file in order to view the approved header names and values for your csv file"
     }
-Try {$names = Import-Csv -Path $Path -ErrorAction Stop}
+Try {$data = Import-Csv -Path $Path -ErrorAction Stop}
 Catch {
         Write-Warning "Unable to Import $Path"
         Throw "Aborting Script Execution"
@@ -93,7 +93,7 @@ Catch {
 
 #region split_names
 Write-Verbose "Splitting name entries"
-$names = ,$names | Get-RandomArray | Sort -Property Principal
+$names = ,$data | Get-RandomArray | Sort -Property Principal | select -ExpandProperty name
 if (($names.Count % 2) -ne 0)
     {
         switch (Read-Host "Uneven numbers of entries found:
@@ -170,7 +170,25 @@ $History = Import-History -Path $storepath -Count $count
 Write-Verbose "Set counter"
 $i = 0
 Write-Verbose "Begin History Loop"
-do 
+if ($History)
+    {
+        do 
+            {
+                Write-Verbose "Randomize `$key"
+                $key = ,$key | Get-RandomArray
+                Write-Verbose "Randomize `$value"
+                $value = ,$value | Get-RandomArray
+                Write-Verbose "Creating pairs"
+                Try {$hash = New-Team -Key $key -Value $value -ErrorAction Stop}
+                Catch {
+                        Write-Warning "Creating the pairs failed, the operation will be aborted"
+                        Throw "Unable to build hashtable, please ensure you don't have any duplicate names in your input file"
+                    }
+                $i++
+            }
+        Until (Test-History -Pairs $hash -oldpairs $History) 
+    }
+Else
     {
         Write-Verbose "Randomize `$key"
         $key = ,$key | Get-RandomArray
@@ -184,7 +202,6 @@ do
             }
         $i++
     }
-Until (Test-History -Pairs $hash -oldpairs $History) 
 Write-Verbose "had to randomize $i times"
 if ($odd)
     {
@@ -197,7 +214,7 @@ if ($odd)
 if ($store)
     {
         Write-Verbose "Storing historical data"
-        try {Export-History -Hash $hash -Path $path}
+        try {Export-History -Hash $hash -Path $StorePath -ErrorAction stop}
         Catch {
                 Write-Warning "Unable to export historical data, please contact the helpdesk in order to generate a support ticket for this application"
                 Write-Error "Historical data was not saved for this iteration"
@@ -214,12 +231,12 @@ if ($Notify)
                 $body = @"
 Hello,
 The following people have now been assigned to a development team:
-$(@($_.key.name,$_.value.name ) | ForEach-Object {$_+"`n"})
+$(@($_.key,$_.value ) | ForEach-Object {$_+"`n"})
 Your team members email addresses are all listed in the to block of this message
 
 "@
                 $emailparams =@{
-                        To= @($_.key.email,$_.value.email)
+                        To= $($data | where {$_.name -in @($_.key,$_.value)} | select -ExpandProperty email)
                         Bcc = $PMEmail
                         From= $PMEmail
                         Subject="Project Pairings"
@@ -228,7 +245,7 @@ Your team members email addresses are all listed in the to block of this message
                     }
                 Try {Send-MailMessage @emailparams -ErrorAction Stop}
                 catch {
-                        Write-Warning "Unable to send message to $($_.key.name,$_.value.name), please ensure to do manual notifications for this team" 
+                        Write-Warning "Unable to send message to $($_.key,$_.value), please ensure to do manual notifications for this team" 
                         Write-Error $_.exception.message
                     }
             }
@@ -237,5 +254,5 @@ Your team members email addresses are all listed in the to block of this message
 
 #region Display
 Write-Verbose "Display content"
-$hash.GetEnumerator() | foreach {"$($_.Key.name),$($_.Value.name)"}
+$hash.GetEnumerator() | foreach {"$($_.Key),$($_.Value)"}
 #endregion Display

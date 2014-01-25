@@ -133,7 +133,7 @@ Param
     [string]$Path
     )
 Write-Verbose "Exporting history to $path"
-$Hash | Export-Clixml -Path $Path\Data_$(Get-Date -Format MM_DD_YY).xml
+$Hash | Export-Clixml -Path $Path\Data_$(Get-Date -Format ss_mm_hh_MM_dd_yyyy).xml
 }
 
 #Import-History
@@ -171,7 +171,7 @@ Param
     [int]$Count=4
     )
 Write-Verbose "Collecting $count .xml files from $path"
-Get-ChildItem -Directory $Path -Include *.xml | Sort-Object -property LastWriteTime  |  Select-Object -Last $Count | Import-Clixml -Path $Path 
+Get-ChildItem -Path $Path -filter *.xml | Sort-Object -property LastWriteTime  |  Select-Object -Last $Count | Import-Clixml
 }
 
 
