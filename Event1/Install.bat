@@ -1,1 +1,1 @@
-Powershell.exe -file %cd%\install.ps1
+Powershell.exe -noprofile -file %cd%\install.ps1

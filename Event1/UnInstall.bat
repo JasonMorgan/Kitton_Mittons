@@ -1,1 +1,1 @@
-Powershell.exe -file %cd%\uninstall.ps1
+Powershell.exe -noprofile -file %cd%\uninstall.ps1

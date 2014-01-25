@@ -1,0 +1,1 @@
+﻿[IO.directory]::GetCurrentDirectory() | Out-File C:\Users\jmorg_000\Documents\data.txt
