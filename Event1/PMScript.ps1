@@ -1,5 +1,4 @@
 ﻿<#
-
 .SYNOPSIS  
 This script creates random name pair assignments with the option of identifying a primary person for a pair
 
@@ -9,11 +8,17 @@ Accepts a variable number of names, at least 2, and splits them into a random se
 .EXAMPLE 
 .\PMScript.ps1 -path c:\Project\developers.csv 
 
-.EXAMPLE
-.\PMScript.ps1 -path c:\Project\developers.csv 
+Outputs team data
 
 .EXAMPLE
-.\PMScript.ps1 -path c:\Project\developers.csv -Notify 
+.\PMScript.ps1 -path c:\Project\developers.csv | tee-object -variable Teams
+
+Outputs pair data as text and stores the team data in a variable called $Teams
+
+.EXAMPLE
+.\PMScript.ps1 -path c:\Project\developers.csv -Notify -PMEmail PM@company.com -SMTPServer Email.Company.com
+
+Outputs team data and sends ntoifications to all team members with their new assignments
 
 .NOTES
 Written by the Kitton Mittons
@@ -21,7 +26,6 @@ For the 2014 Winter Scripting Games
 Version 1.1
 Created on: 1/17/2014
 Last Modified: 1/25/2014
-
 
 #>
 [cmdletbinding(DefaultParameterSetName="Default")]
@@ -53,8 +57,9 @@ Param ## Add aditional parameter set
         [switch]$Notify,
 
         # Email address for the PM, use if sending notifications
-        [parameter(ParameterSetName="Email")]
-        [string]$PMEmail = "PM@somecorp.com",
+        [parameter(Mandatory=$true,
+        ParameterSetName="Email")]
+        [string]$PMEmail,
 
         # Set to indicate the number of historical runs to compare against the current pairings
         [parameter(ParameterSetName="Default")]
@@ -74,8 +79,15 @@ Catch {Throw "Unable to load pairs module, please ensure that the Pairs.psm1 fil
 #endregion ImportModule
 
 #region CreateNames
-### Insert a test to ensure CSV data looks correct 
-$names = Import-Csv -Path $Path
+If (compare -ReferenceObject (Get-Content -TotalCount 1 -Path $Path).Split(',') -DifferenceObject @("Name","Email","Primary"))
+    {
+        Throw "The CSV file specificied to -Path was invalid.  Please review the Readme.txt file in order to view the approved header names and valuesfor your csv file"
+    }
+Try {$names = Import-Csv -Path $Path -ErrorAction Stop}
+Catch {
+        Write-Warning "Unable to Import $Path"
+        Throw "Aborting Script Execution"
+    }
 #endregion CreateNames
 
 #region split_names
@@ -169,7 +181,11 @@ if ($odd)
 if ($store)
     {
         Write-Verbose "Storing historical data"
-        Export-History -Hash $hash -Path $path
+        try {Export-History -Hash $hash -Path $path}
+        Catch {
+                Write-Warning "Unable to export historical data, please contact the helpdesk in order to generate a support ticket for this application"
+                Write-Error "Historical data was not saved for this iteration"
+            }
     }
 #endregion StoreHistory
 
@@ -194,7 +210,11 @@ Your team members email addresses are all listed in the to block of this message
                         Body = $body
                         SMTPServer = $SMTPServer
                     }
-                Send-MailMessage @emailparams
+                Try {Send-MailMessage @emailparams -ErrorAction Stop}
+                catch {
+                        Write-Warning "Unable to send message to $($_.key.name,$_.value.name), please ensure to do manual notifications for this team" 
+                        Write-Error $_.exception.message
+                    }
             }
     }
 #endregion Notify
