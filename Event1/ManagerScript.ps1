@@ -39,10 +39,11 @@ Param
         [ValidateCount(2,999999)]
         [string[]]$names = @('Syed', 'Kim', 'Sam', 'Hazem', 'Pilar', 'Terry', 'Amy', 'Greg', 'Pamela', 'Julie', 'David', 'Robert', 'Shai', 'Ann', 'Mason', 'Sharon')
     )
+#region ImportModule
 Write-Verbose "Importing Pairs module"
 Try {Import-Module Pairs -ErrorAction Stop} 
 Catch {Throw "Unable to load pairs module, please ensure that the Pairs.psm1 file is loaded in you `$env:PSModulePath"}
-
+#endregion ImportModule
 #region split_names
 Write-Verbose "Splitting name entries"
 $names = ,$names | Get-RandomArray
