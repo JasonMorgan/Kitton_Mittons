@@ -235,7 +235,7 @@ Your team members email addresses are all listed in the to block of this message
     }
 #endregion Notify
 
-#region output
-Write-Verbose "Output results as a single Hashtable"
-$hash
-#endregion output
+#region Display
+Write-Verbose "Display content"
+$hash.GetEnumerator() | foreach {"$($_.Key.name),$($_.Value.name)"}
+#endregion Display
