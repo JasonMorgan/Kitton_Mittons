@@ -207,3 +207,53 @@ end
         else {$true}
     }
 }
+
+
+###
+Lines from ManagerScript
+#region DefineFunctions ### This will be replaced with import-module
+Write-Verbose "Define Functions"
+#Get-RandomArray
+function Get-RandomArray 
+{
+<#
+
+#>
+[cmdletbinding()]
+Param 
+    (
+        [parameter(Mandatory=$true,
+        ValueFromPipeline=$true, 
+        ValueFromPipelineByPropertyName=$True,
+        HelpMessage="Enter an array object to be randomized")]
+        [System.Object[]]$array
+    )
+process 
+    {
+        Write-Verbose "Randomizing"
+        $array | Get-Random -Count $array.Count
+    }
+}
+#New-Team
+Function New-Team
+{
+<##>
+[cmdletbinding()]
+Param
+    (
+        [Parameter(Mandatory=$true,
+        HelpMessage="Input the key object for the hash table")]
+        [System.Object[]]$Key,
+        [Parameter(Mandatory=$true,
+        HelpMessage="input the value object for the hash table")]
+        [System.Object[]]$Value
+    )
+if ($Key.Count -ne $Value.Count)
+    {Throw "The key and value entries are unequal, unable to continue this function"}
+$hash = @{}
+$i = 0
+$Key | foreach {$hash.Add($_,$Value[$i]) ; $i++}
+$hash
+}
+Write-Verbose "Finished defining functions"
+#endregion DefineFunctions
