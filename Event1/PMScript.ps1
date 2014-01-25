@@ -12,7 +12,7 @@ Accepts a variable number of names, at least 2, and splits them into a random se
 .\PMScript.ps1 -path c:\Project\developers.csv 
 
 .EXAMPLE
-.\PMScript.ps1 -path c:\Project\developers.csv -Store True  -Notify True -
+.\PMScript.ps1 -path c:\Project\developers.csv -Notify 
 
 .NOTES
 Written by the Kitton Mittons
@@ -23,47 +23,47 @@ Last Modified: 1/25/2014
 
 
 #>
-<#Script for PM#>
-Param 
+[cmdletbinding()]
+Param ## Add aditional parameter set
     (
-        # Add Validation
+        # Please enter the path to a .csv file containing names to be paired
+        [Parameter(Mandatory=$true,
+        HelpMessage='Please enter the path to a .csv file containing names to be paired',
+        ParameterSetName="Default")]
+        [ValidateScript({(Test-Path $_ -PathType leaf) -and ($_.endswith('.csv'))})]
+        [string]$Path,
 
-        # file path to .csv file containing names to be paired
-        [Parameter(Mandatory=$true,)
-        [string]$Path = "$env:USERPROFILE\Documents\Names.csv",
-
-        # path to directory that stores the CliXML files to track historic team results
+        # path to the stored history directory
         [parameter()]
+        [ValidateScript({Test-Path $_ -PathType Container})]
         [string]$StorePath = "$env:USERPROFILE\Documents\AssignTeams",
 
-        # True False to determine if script will run for the Project Manager
-        [parameter()]
+        # Indicate if historical data should be recorded for this iteration
         [bool]$store = $true,
         
-        # True False to determine if email will be sent to team particpants
-        [parameter()]
+        # Set if you wish particapants to be notified of their pairings
         [switch]$Notify,
 
-        # Project Manager email address
+        # Email address for the PM, use if sending notifications
         [parameter()]
         [string]$PMEmail = "PM@somecorp.com",
 
-        # 
-        [int]$count = 4
+        # Set to indicate the number of historical runs to compare against the current pairings
+        [int]$count = 4,
+
+        [string]$SMTPServer 
     )
-#####
-If (-not(Test-Path $path))
-    {
-        Write-Verbose "Create storage directory"
-        New-Item $path -ItemType directory -Force | Out-Null
-    }
+#region ImportModule
+Write-Verbose "Importing Pairs module"
+Try {Import-Module Pairs -ErrorAction Stop} 
+Catch {Throw "Unable to load pairs module, please ensure that the Pairs.psm1 file is loaded in your `$env:PSModulePath"}
+#endregion ImportModule
 
-
-
-Write-Verbose "Finished defining functions"
-
-
+#region CreateNames
+### Insert a test to ensure CSV data looks correct 
 $names = Import-Csv -Path $Path
+#endregion CreateNames
+
 #region split_names
 Write-Verbose "Splitting name entries"
 $names = ,$names | Get-RandomArray | Sort -Property Principal
@@ -107,7 +107,7 @@ if ($odd)
     {
         Write-Verbose "Splitting off double partner from `$names"
         $double = $names | Get-Random -Count 2
-        $names = ($names | where {$_ -notin $pair})
+        $names = ($names | where {$_ -notin $double})
     }
 Write-verbose "Splitting name array into new arrays"
 Foreach ($n in $names)
@@ -125,9 +125,13 @@ Foreach ($n in $names)
     }
 Write-Verbose "Done Splitting names"
 #endregion split_names
+
 #region Randomize and assign
-$History = Import-PairData -Path $storepath
+Write-Verbose "Importing History"
+$History = Import-History -Path $storepath -Count $count
+Write-Verbose "Set counter"
 $i = 0
+Write-Verbose "Begin History Loop"
 do 
     {
         Write-Verbose "Randomize `$key"
@@ -146,13 +150,42 @@ if ($odd)
         $hash.add($lead,$double)
     }
 #endregion Randomize and assign
+
+#region StoreHistory
 if ($store)
     {
-        Export-PairData -Hash $hash -Path $path
+        Write-Verbose "Storing historical data"
+        Export-History -Hash $hash -Path $path
     }
+#endregion StoreHistory
+
+#region Notify
 if ($Notify)
     {
+        Write-Verbose "Sending notification"
+        Write-Verbose
         $hash.GetEnumerator() | foreach {
-                Email-Team -name @($_.Key.name, $_.Value.name) -EmailAddress @($_.Key.email, $_.Value.email) -PMAddress $PMEmail
+                $body = @"
+Hello,
+The following people have now been assigned to a development team:
+$(@($_.key.name,$_.value.name ) | ForEach-Object {$_+"`n"})
+Your team members email addresses are all listed in the to block of this message
+
+"@
+                $emailparams =@{
+                        To= @($_.key.email,$_.value.email)
+                        Bcc = $PMEmail
+                        From= $PMEmail
+                        Subject="Project Pairings"
+                        Body = $body
+                        SMTPServer = $SMTPServer
+                    }
+                Send-MailMessage @emailparams
             }
     }
+#endregion Notify
+
+#region output
+Write-Verbose "Output results as a single Hashtable"
+$hash
+#endregion output
