@@ -1,0 +1,1 @@
+Get-Process skype | Select-Object name,fileversion,productversion,company | Format-List | Export-Clixml -Path C:\Users\carlw\Documents\GitHub\Kitton_Mittons\Event2\Extensions\procsexport.xml
