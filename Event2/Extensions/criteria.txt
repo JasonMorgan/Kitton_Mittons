@@ -1,0 +1,5 @@
+Common design criteria for extension scripts:
+
+output custom objects
+
+And that's it!  the criteria got a lot easier when I reread the instructions.  Be sure to select good properties when you return data.
