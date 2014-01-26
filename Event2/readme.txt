@@ -47,3 +47,16 @@ Processes
 Services
 NetworkShares
 Eventlogs - properties and last purge
+
+Jobs:
+Client Jobs:
+Main Job
+Watcher Job
+Latent notification job
+rekey job
+
+Server Job:
+Parse XML
+Verify count
+	Notice missing entries
+Notify Admin
