@@ -18,7 +18,7 @@ Last Modified: 1/26/2014
 #>
 
 #region SetVariables
-$JobName = "Software"
+$Name = "Software"
 $title = "Installed Software"
 $format = "Table"
 #endregion SetVariables
