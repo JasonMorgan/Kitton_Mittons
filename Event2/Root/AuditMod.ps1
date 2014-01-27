@@ -42,8 +42,10 @@ Last Modified: 1/26/2014
 #region HTMLReport
 #endregion HTMLReport
 
+#only do if you have time
 #region XMLReport
 #endregion XMLReport
 
+#may be superfluous
 #region SendNotification
 #endregion SendNotification
