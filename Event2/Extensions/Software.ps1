@@ -17,6 +17,11 @@ Last Modified: 1/26/2014
 
 #>
 
+Param 
+    (
+        [switch]$Register
+    )
+
 #region SetVariables
 $Name = "Software"
 $title = "Installed Software"
@@ -24,7 +29,10 @@ $format = "Table"
 #endregion SetVariables
 
 #region DefineFunctions
-
+if ($Register)
+    {
+        Break
+    }
 Function Get-InstalledSoftware # Needs work, Check prod for updated version then, if needed, update to current standard
 { 
 <# 
