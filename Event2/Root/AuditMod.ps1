@@ -36,24 +36,32 @@ Param
         [Parameter(ParameterSet="local")]
         $Path = "\\Server\Share\Reports\$(Get-Date -Format MM_dd_yyyy)\$env:COMPUTERNAME",
         
-        #
+        # Path to network based key file
         [Parameter(ParameterSet="Default")]
         $keyPath = "\\Server\Share\Common\key.xml",
         
-        #
+        # Email address for notifications
         [Parameter(ParameterSet="Default")]
         $EmailAddress,
         
-        #
+        # Specify Extensions to be run
         [Parameter(ParameterSet="local")]
-        $extension = "All",
+        [ValidateSet({(Import-Clixml .\Config.xml | select -ExpandProperty Name),"all"})] # not sure if this works
+        [string[]]$extension = "All",
         
-        #
+        # 
         [Parameter(ParameterSet="list")]
         [switch]$listextension
     )
 #region Initialize
+Write-Verbose "Import Scheduled Jobs Module"
 Try {Import-Module -Name PSScheduledJob} Catch {Throw "Unable to load Scheduled Jobs Module"}
+If ($listextension)
+    {
+        Write-Verbose "Listing Extensions"
+        Import-Clixml .\Config.xml
+        break
+    }
 #load config file
 try {$jobs = Import-Clixml .\Config.xml} Catch {Throw "Unable to load config.xml, please verify that SecAudit has been deployed correctly"}
 #endregion Initialize
@@ -123,9 +131,9 @@ Foreach ($j in $jobs)
                 @"
 <h3> $($j.title) <h3>
 <br>
-$(Receive-Job -Name $j.name | ConvertTo-Html -As $j.format -Fragment | Out-String)
-<br>
 $(if ((Get-Job -Name $j.name).ChildJobs[0].error) {"This job generated $((Get-Job -Name $j.name).ChildJobs[0].error.count) errors while running"})
+<br>
+$(Receive-Job -Name $j.name | ConvertTo-Html -As $j.format -Fragment | Out-String)
 <br>
 "@
             }
