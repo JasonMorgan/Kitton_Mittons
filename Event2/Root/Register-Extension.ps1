@@ -21,33 +21,46 @@ Last Modified: 1/26/2014
 [cmdletbinding(DefaultParameterSet="Default")]
 Param 
     (
-        # Specify the path to the exten
+        # Specify the path to the extension file, this will not accept relative paths
         [Parameter(Mandatory=$true,
         ParameterSetName="Default")]
         [validateScript({[System.IO.Path]::IsPathRooted($_)})]
         [Alias("Fullname")]
         [string]$Path,
+
+        #
         [Parameter(Mandatory=$true,
         ParameterSetName="job")]
         [string]$Name,
+        
+        #
         [Parameter(Mandatory=$true,
         ParameterSetName="job")]
         [string]$Scriptblock,
+        
+        #
         [Parameter(Mandatory=$true,
         ParameterSetName="job")]
-        [string]$Title
+        [string]$Title,
+        
+        #
+        [Parameter(ParameterSetName="Default")]
+        [Parameter(ParameterSetName="job")]
+        [string]$installroot = "C:\ProgramData\SecAudit"
     )
 $default = {
         . $Path -register
+        $job = New-Object -TypeName PSObject -Property @{ 
+                Name = $Name  
+                Title = $Title
+                Format = $format
+            }
         Try
             {
                 Register-ScheduledJob -Name $Name -ScriptBlock {$Path}
             }
         Catch {}
-        $jobs = Import-Clixml C:\ProgramData\SecAudit\Config.xml, (New-Object -TypeName PSObject -Property @{ 
-            Name = $Name  
-            Title = $Title
-
+        (Import-Clixml ) + $job | Export-Clixml
         
     }
 switch ($PSCmdlet.ParameterSetName)
