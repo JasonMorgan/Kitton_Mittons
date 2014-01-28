@@ -22,17 +22,18 @@ Param
         [switch]$Register
     )
 
-#region SetVariables
+#region ExtensionHeader
 $Name = "Software"
 $title = "Installed Software"
 $format = "Table"
-#endregion SetVariables
-
-#region DefineFunctions
 if ($Register)
     {
         Break
     }
+#endregion ExtensionHeader
+
+#region DefineFunctions
+
 Function Get-InstalledSoftware # Needs work, Check prod for updated version then, if needed, update to current standard
 { 
 <# 
