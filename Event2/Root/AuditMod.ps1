@@ -126,14 +126,14 @@ HTMLhead
 $(
 Foreach ($j in $jobs)
     {
-        if ((Get-Job -Name $j.name).ChildJobs[0].Output)
+        if ((Get-Job -Name $j.name -Newest 1).ChildJobs[0].Output)
             {
                 @"
 <h3> $($j.title) <h3>
 <br>
-$(if ((Get-Job -Name $j.name).ChildJobs[0].error) {"This job generated $((Get-Job -Name $j.name).ChildJobs[0].error.count) errors while running"})
+$(if ((Get-Job -Name $j.name -Newest 1).ChildJobs[0].error) {"This job generated $((Get-Job -Name $j.name).ChildJobs[0].error.count) errors while running"})
 <br>
-$(Receive-Job -Name $j.name | ConvertTo-Html -As $j.format -Fragment | Out-String)
+$(Get-Job -Name $j.name -Newest 1 | Receive-Job | ConvertTo-Html -As $j.format -Fragment | Out-String)
 <br>
 "@
             }

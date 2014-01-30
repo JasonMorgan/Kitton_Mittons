@@ -1,41 +1,39 @@
-Creating SecAudit tool
+Description:
+The SecAudit tool runs in the following configuration -
+
+	One master script that launches all the extension scripts when triggered
+	Extension scripts are written with a particular header, the header is documented in the extension header section
+
+There is a register-extension script to load new extensions into the tool
+
+Essentially every extension is built as a scheduled job and the master script, SecAudit, runs as a scheduled task
+
+An install and uninstall script will be provided to deploy the scripts, run the register-extensions script for every extension file, and create a new scheduled task for the SecAudit tool.
 
 Common criteria
-All stored data encrypted
 Master runs as system
 Uses scheduled task - hidden
-watcher task -hidden different folder
-
-Client side:
 
 Root:
 Master script in root - run as system
 Key file
 register extension script
-Job to load reports on server when network connection becomes available
-Watcher script
-	Report if Master disabled or fails or won't run <24hrs
+Config.xml
 
-Extensions:
-Component scripts
+Network share for storing reports - Encryption available
+Common HTML report
 
-History:
-Historical data stored in History - function to test free space to ensure > 5% still free
+Entension Header:
+Param 
+    (
+        [switch]$Register
+    )
 
-
-Network share for storing reports - Encrypt on moving to share
-Common HTML peport
-Common XML report
-
-
-
-
-Server Side:
-Script to verify and set NTFS permissions
-ReKey Function
-Distributes new key file to clients
-Stores historical keys for reopening old data
-
+#region SetVariables
+$Name = "Env" - job name
+$title = "Environmental Variables" - Report title
+$format = "Table" - report format
+#endregion SetVariables
 
 Extensions:
 Env
@@ -47,16 +45,3 @@ Processes
 Services
 NetworkShares
 Eventlogs - properties and last purge
-
-Jobs:
-Client Jobs:
-Main Job
-Watcher Job
-Latent notification job
-rekey job
-
-Server Job:
-Parse XML
-Verify count
-	Notice missing entries
-Notify Admin
