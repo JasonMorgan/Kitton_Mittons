@@ -31,3 +31,9 @@ if ($Register)
         Break
     }
 #endregion ExtensionHeader
+
+#region GatherData
+
+Get-CimInstance win32_volume  | Select Caption,InstallDate,DeviceID,DriveType,AutoMount,DriveLetter
+
+#region GatherData

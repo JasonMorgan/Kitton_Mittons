@@ -31,3 +31,18 @@ if ($Register)
         Break
     }
 #endregion ExtensionHeader
+
+#region GatherData
+Write-Verbose "Collecting Shares"
+$types = @{
+        "0" = "Disk Drive"
+        "1" = "Print Queue"
+        "2" = "Device"
+        "3" = "IPC"
+        "2147483648" = "Disk Drive Admin"
+        "2147483649" = "Print Queue Admin"
+        "2147483650" = "Device Admin"  
+        2147483651 =  "IPC Admin"   
+    }
+Get-CimInstance win32_share | select Name,Description,Status,@{l="Type";e={ $types.Item("$($_.type)") } },Path
+#endregion GatherData

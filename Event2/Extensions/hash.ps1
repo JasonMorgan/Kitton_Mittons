@@ -23,7 +23,7 @@ Param
 
 #region ExtensionHeader
 $Name = "Files"
-$title = "EXE and DLL info"
+$title = "EXE info"
 $format = "Table"
 if ($Register)
     {
@@ -151,18 +151,17 @@ Function Get-FileHash # This is not ours, we took it from Boe Prox's contributio
 
 #region GatherData
 
-$files = Get-PSDrive -PSProvider FileSystem | select -ExpandProperty root |
-Get-ChildItem -Recurse -Include *.exe,*.dll -ErrorAction SilentlyContinue
+$files = Get-ChildItem -Recurse -Include *.exe -ErrorAction SilentlyContinue -Path $env:Path.Split(';')
 
 Foreach ($f in $files)
     {
-        [PSObject]@{
+        New-Object -TypeName PSObject -Property @{
                 Name = $f.FullName
                 CreationTime = $f.CreationTime
                 LastWriteTime = $f.LastWriteTime
                 Length = $f.Length
                 Hash = try {($f | Get-FileHash -Algorithm MD5 -ErrorAction stop).MD5} catch {"Unable to generate hash"}
             }
-    }
+    } 
 
 #endregion GathertData
