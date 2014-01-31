@@ -31,3 +31,7 @@ if ($Register)
         Break
     }
 #endregion ExtensionHeader
+
+#region GatherData
+Get-CimInstance win32_process -Filter "Name='Notepad.exe'" | Select Name,Path,CreationDate,ExecutablePath
+#endregion GatherData
