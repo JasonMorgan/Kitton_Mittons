@@ -33,5 +33,7 @@ if ($Register)
 #endregion ExtensionHeader
 
 #region GatherData
+
 Get-CimInstance Win32_service  | Select Name,ProcessID,State,StartName,PathName,ExitCode
+
 #endregion GatherData

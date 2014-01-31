@@ -67,6 +67,7 @@ try {$jobs = Import-Clixml .\Config.xml} Catch {Throw "Unable to load config.xml
 #endregion Initialize
 
 #region RunScripts
+
 Write-Verbose "Starting jobs"
 foreach ($n in $jobs.name)
     {
@@ -90,7 +91,7 @@ Else
         do {Start-Sleep -Seconds 15}
         While ((Get-Job).state -contains "Running")
     }
-#watch for errors
+
 #endregion RunScripts
 
 #region TestShare
@@ -113,27 +114,30 @@ Else {$notfound = $true}
 
 
 #region CheckKeyfile
+
 if ((Get-Item -Path $keyPath).LastWriteTime -gt (Get-Item .\key.xml).LastWriteTime)
     {
         Copy-Item -Path $keyPath -Destination .\key.xml -Force -ErrorAction Stop
     }
+
 #endregion CheckKeyfile
 
 #region HTMLReport
+
 $report = @"
 HTMLhead
 
 $(
 Foreach ($j in $jobs)
     {
-        if ((Get-Job -Name $j.name -Newest 1).ChildJobs[0].Output)
+        if ((Get-Job -Name $j.name).ChildJobs[0].Output)
             {
                 @"
 <h3> $($j.title) <h3>
 <br>
-$(if ((Get-Job -Name $j.name -Newest 1).ChildJobs[0].error) {"This job generated $((Get-Job -Name $j.name).ChildJobs[0].error.count) errors while running"})
+$(if ((Get-Job -Name $j.name).ChildJobs[0].error) {"This job generated $((Get-Job -Name $j.name).ChildJobs[0].error.count) errors while running"})
 <br>
-$(Get-Job -Name $j.name -Newest 1 | Receive-Job | ConvertTo-Html -As $j.format -Fragment | Out-String)
+$(Receive-Job -Name $j.name | ConvertTo-Html -As $j.format -Fragment | Out-String)
 <br>
 "@
             }
@@ -142,45 +146,20 @@ $(Get-Job -Name $j.name -Newest 1 | Receive-Job | ConvertTo-Html -As $j.format -
 
 HTMLTail
 "@
+
 #endregion HTMLReport
 
 #region Encryption
+
 if ($encrypt)
     {
         $report = ConvertTo-SecureString -String $report -AsPlainText -Key (Import-Clixml .\key.xml)
     }
+
 #endregion Encryption
 
-#only do if you have time
-#region XMLReport
-#endregion XMLReport
-
-#region SendNotification
-if ($notfound)
-    {
-        $body = @"
-
-"@
-        $params = @{
-                
-            }
-        Send-MailMessage @params
-    }
-If ($nowrite)
-    {
-        $body = @"
-
-"@
-        $params = @{
-                
-            }
-        Send-MailMessage @params
-    }
-#endregion SendNotification
-
-#region StartWatcher
-#endregion StartWatcher
-
 #region SaveReport
+
 $report | Out-File -FilePath $Path
+
 #endregion SaveReport

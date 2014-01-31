@@ -29,11 +29,11 @@ $title = "Environmental Variables"
 $format = "List"
 #endregion SetVariables
 
-#region CreateData
+#region GatherData
 
 Get-ChildItem Env: | Select Name,Value
 
-#endregion CreateData
+#endregion GatherData
 
 
 

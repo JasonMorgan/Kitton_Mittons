@@ -33,7 +33,17 @@ if ($Register)
 #endregion ExtensionHeader
 
 #region GatherData
+$Type = @{
+        '0' = 'Unknown'
+        '1' = 'No Root Directory'
+        '2' = 'Removable Disk'
+        '3' = 'Local Disk'
+        '4' = 'Network Drive'
+        '5' = 'Compact Disk'
+        '6' = 'RAM Disk'
+    }
 
-Get-CimInstance win32_volume  | Select Caption,InstallDate,DeviceID,DriveType,AutoMount,DriveLetter
+Get-CimInstance win32_volume  | Select Caption,InstallDate,DeviceID,
+@{ l='DriveType';e={ $Type.item("$($_.DriveType)") } },AutoMount,DriveLetter,capacity,freespace
 
-#region GatherData
+#endregion GatherData

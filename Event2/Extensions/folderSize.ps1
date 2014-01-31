@@ -31,3 +31,11 @@ if ($Register)
         Break
     }
 #endregion ExtensionHeader
+
+#region DefineFunctions
+
+#endregion DefineFunctions
+
+#region GatherData
+
+#endregion GatherData

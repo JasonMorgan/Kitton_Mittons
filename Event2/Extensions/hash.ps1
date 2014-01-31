@@ -151,7 +151,7 @@ Function Get-FileHash # This is not ours, we took it from Boe Prox's contributio
 
 #region GatherData
 
-$files = Get-ChildItem -Recurse -Include *.exe -ErrorAction SilentlyContinue -Path $env:Path.Split(';')
+$files = Get-ChildItem -Recurse -Include *.exe -ErrorAction SilentlyContinue -Path $env:SystemRoot
 
 Foreach ($f in $files)
     {
