@@ -33,12 +33,26 @@ if ($Register)
 #endregion ExtensionHeader
 
 #region GatherData
-$keys = @()
+Write-Verbose "Adding HKU"
+New-PSDrive -PSProvider Registry -Root HKEY_USERS -Name HKU
+$keys = @(
+        "HKLM:\Software\Microsoft\Windows\CurrentVersion\Run"
+        "HKLM:\Software\Microsoft\Windows\CurrentVersion\RunOnce"
+        "HKLM:\Software\Microsoft\Windows\CurrentVersion\RunServices"
+        "HKLM:\Software\Microsoft\Windows\CurrentVersion\RunServicesOnce"
+        "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
+        "HKCU:\Software\Microsoft\Windows\CurrentVersion\RunOnce"
+        "HKCU:\Software\Microsoft\Windows\CurrentVersion\RunOnce\Setup"
+
+    )
 foreach ($k in $keys)
     {
         foreach ($p in $props) 
             {
-                [PSObject]@{$p = (Get-ItemProperty -Path $k.name -Name $p).$p} 
+                [PSObject]@{
+                        Key = $k.name
+                        $p = (Get-ItemProperty -Path $k.name -Name $p).$p
+                    } 
             }
     }
 
