@@ -32,4 +32,14 @@ if ($Register)
     }
 #endregion ExtensionHeader
 
-Get-Item -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run\ | Select-Object -ExpandProperty property
+#region GatherData
+$keys = @()
+foreach ($k in $keys)
+    {
+        foreach ($p in $props) 
+            {
+                [PSObject]@{$p = (Get-ItemProperty -Path $k.name -Name $p).$p} 
+            }
+    }
+
+#region GatherData
