@@ -27,7 +27,7 @@ Created on: 1/26/2014
 Last Modified: 1/31/2014
 
 #>
-[cmdletbinding(DefaultParameterSet="Default")]
+[cmdletbinding(DefaultParameterSetName="Default")]
 Param 
     (
         # Specify the path to the extension file, this will not accept relative paths
@@ -163,7 +163,7 @@ Process
                         Format = $format
                     }
         Write-Verbose "Loading Security Audit configuration file"
-        [System.Collections.ArrayList]$jobs = Import-Clixml -Path $installroot\Config.xml
+        [System.Collections.ArrayList]$jobs += Import-Clixml -Path $installroot\Config.xml
         if ($Force)
             {
                 if ($jobs.name -contains $job.name)
