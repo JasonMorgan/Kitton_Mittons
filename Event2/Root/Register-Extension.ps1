@@ -67,7 +67,7 @@ Process
                         Write-Verbose "Registering Job: $Name"
                         Register-ScheduledJob -Name $Name -ScriptBlock {$Path} -MaxResultCount 1
                     }
-                Catch {}        
+                Catch {Throw "Unable to register $Name"}        
             }
 
         $job = {
@@ -76,7 +76,7 @@ Process
                         Write-Verbose "Registering Job: $Name"
                         Register-ScheduledJob -Name $Name -ScriptBlock $Scriptblock -MaxResultCount 1
                     }
-                Catch {}
+                Catch {Throw "Unable to register $Name"}
                 
             }
         #endregion BuildScriptBlocks
