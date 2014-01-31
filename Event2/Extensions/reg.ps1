@@ -31,3 +31,5 @@ if ($Register)
         Break
     }
 #endregion ExtensionHeader
+
+Get-Item -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run\ | Select-Object -ExpandProperty property
