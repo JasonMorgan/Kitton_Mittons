@@ -1,7 +1,7 @@
 <#
 
 .SYNOPSIS
-
+This script will collect information about local shares.
 
 .DESCRIPTION
 This script is intended to run as a scheduled job.  Use the register switch when loading the header data.
@@ -23,7 +23,6 @@ For the 2014 Winter Scripting Games
 Version 1.2
 Created on: 1/26/2014
 Last Modified: 2/1/2014
-
 
 #>
 
