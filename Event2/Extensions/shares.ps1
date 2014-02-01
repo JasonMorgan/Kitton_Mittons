@@ -22,30 +22,31 @@ Param
         [switch]$Register
     )
 
-#region ExtensionHeader
+#region Job
+$job = {
+        Write-Verbose "Collecting Shares"
+        $types = @{
+                "0" = "Disk Drive"
+                "1" = "Print Queue"
+                "2" = "Device"
+                "3" = "IPC"
+                "2147483648" = "Disk Drive Admin"
+                "2147483649" = "Print Queue Admin"
+                "2147483650" = "Device Admin"  
+                "2147483651" =  "IPC Admin"   
+            }
+        Get-CimInstance win32_share | select Name,Description,Status,@{l="Type";e={ $types.Item("$($_.type)") } },Path
+    }
+#endregion Job
 
-if ($Register)
+#region run
+Switch ($Register)
     {
-        $Name = "Shares"
-        $title = "Available Network Shares"
-        $format = "Table"
+        $true {
+                $Name = "Shares"
+                $title = "Available Network Shares"
+                $format = "Table"
+            }
+        $false {$job.invoke()}
     }
-#endregion ExtensionHeader
-
-#region GatherData
-if (-not($Register))
-    {
-Write-Verbose "Collecting Shares"
-$types = @{
-        "0" = "Disk Drive"
-        "1" = "Print Queue"
-        "2" = "Device"
-        "3" = "IPC"
-        "2147483648" = "Disk Drive Admin"
-        "2147483649" = "Print Queue Admin"
-        "2147483650" = "Device Admin"  
-        "2147483651" =  "IPC Admin"   
-    }
-Get-CimInstance win32_share | select Name,Description,Status,@{l="Type";e={ $types.Item("$($_.type)") } },Path
-    }
-#endregion GatherData
+#endregion run

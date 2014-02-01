@@ -33,8 +33,6 @@ if ($Register)
 #endregion ExtensionHeader
 
 #region DefineFunctions
-if (-not($Register))
-    {
 Function Get-InstalledSoftware # This is a lot more function than we need but it is reused from my Technet posting - Jason
 { 
 <# 
@@ -143,11 +141,22 @@ End {
                 }   
     }
 }
-
 #endregion DefineFunctions
 
 #region GatherData
-
-Get-InstalledSoftware | Select Name,Publisher,Version,InstallDate
+$job = {
+        Get-InstalledSoftware | Select Name,Publisher,Version,InstallDate
     }
 #endregion GatherData
+
+#region run
+Switch ($Register)
+    {
+        $true {
+                $Name = "Shares"
+                $title = "Available Network Shares"
+                $format = "Table"
+            }
+        $false {$job.invoke()}
+    }
+#endregion run

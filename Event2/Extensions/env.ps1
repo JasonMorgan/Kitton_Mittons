@@ -1,8 +1,7 @@
 <#
 
 .SYNOPSIS
-Collect Environment variables and export them to a cliXML file
-
+Collect Environment variables
 
 .DESCRIPTION
 
@@ -23,18 +22,20 @@ Param
         [switch]$Register
     )
 
-#region SetVariables
-    if ($Register)
-    {
-$Name = "Env"
-$title = "Environmental Variables"
-$format = "Table"
-    }
-#endregion SetVariables
-
 #region GatherData
-if (-not($Register))
-    {
-Get-ChildItem Env: | Select Name,Value
+$job = {
+        Get-ChildItem Env: | Select Name,Value
     }
 #endregion GatherData
+
+#region run
+Switch ($Register)
+    {
+        $true {
+                $Name = "Env"
+                $title = "Environmental Variables"
+                $format = "Table"
+            }
+        $false {$job.invoke()}
+    }
+#endregion run

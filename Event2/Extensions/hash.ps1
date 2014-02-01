@@ -32,8 +32,6 @@ if ($Register)
 #endregion ExtensionHeader
 
 #region DefineFunctions
-if (-not($Register))
-    {
 Function Get-FileHash # This is not ours, we took it from Boe Prox's contribution to Technet
 { 
     <#
@@ -148,21 +146,35 @@ Function Get-FileHash # This is not ours, we took it from Boe Prox's contributio
     }
 }
 
+
+
 #endregion DefineFunctions
 
-#region GatherData
+#region Job
+$job = {
+        $files = Get-ChildItem -Recurse -Include *.exe -ErrorAction SilentlyContinue -Path $env:SystemRoot\system32
 
-$files = Get-ChildItem -Recurse -Include *.exe -ErrorAction SilentlyContinue -Path $env:SystemRoot\system32
-
-Foreach ($f in $files)
-    {
-        [pscustomobject]@{
-                Name = $f.FullName
-                CreationTime = $f.CreationTime
-                LastWriteTime = $f.LastWriteTime
-                Length = $f.Length
-                Hash = try {($f | Get-FileHash -Algorithm MD5 -ErrorAction stop).MD5} catch {"Unable to generate hash"}
-            }
-    } 
+        Foreach ($f in $files)
+            {
+                [pscustomobject]@{
+                        Name = $f.FullName
+                        CreationTime = $f.CreationTime
+                        LastWriteTime = $f.LastWriteTime
+                        Length = $f.Length
+                        Hash = try {($f | Get-FileHash -Algorithm MD5 -ErrorAction stop).MD5} catch {"Unable to generate hash"}
+                    }
+            } 
     }
-#endregion GathertData
+#endregion Job
+
+#region run
+Switch ($Register)
+    {
+        $true {
+                $Name = "Shares"
+                $title = "Available Network Shares"
+                $format = "Table"
+            }
+        $false {$job.invoke()}
+    }
+#endregion run

@@ -22,19 +22,21 @@ Param
         [switch]$Register
     )
 
-#region ExtensionHeader
-
-if ($Register)
-    {
-        $Name = "Services"
-        $title = "Service Info"
-        $format = "List"
-    }
-#endregion ExtensionHeader
-
 #region GatherData
-if (-not($Register))
-    {
-Get-CimInstance Win32_service  | Select Name,ProcessID,State,StartName,PathName,ExitCode
+
+$job = {
+        Get-CimInstance Win32_service  | Select Name,ProcessID,State,StartName,PathName,ExitCode
     }
 #endregion GatherData
+
+#region run
+Switch ($Register)
+    {
+        $true {
+                $Name = "Services"
+                $title = "Service Info"
+                $format = "List"
+            }
+        $false {$job.invoke()}
+    }
+#endregion run
