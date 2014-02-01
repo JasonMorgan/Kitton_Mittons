@@ -34,8 +34,11 @@ Param
 #region Job
 $job = {
         Write-Verbose "Adding HKU"
-        New-PSDrive -PSProvider Registry -Root HKEY_USERS -Name HKU
-        New-PSDrive -PSProvider Registry -Root HKEY_CLASSES_ROOT -Name HKCR
+        Try {New-PSDrive -PSProvider Registry -Root HKEY_USERS -Name HKU}
+        Catch {Write-Error "Unable to load HKU drive"}
+        Write-Verbose "Adding HKCR"
+        try {New-PSDrive -PSProvider Registry -Root HKEY_CLASSES_ROOT -Name HKCR}
+        catch {Write-Error "Unable to load HKCR"}
         $keys = @(
                 "HKLM:\Software\Microsoft\Windows\CurrentVersion\Run" #All values in this key are executed#
                 "HKLM:\Software\Microsoft\Windows\CurrentVersion\RunOnce" #All values in this key are executed, and then their autostart reference is deleted#
@@ -72,12 +75,9 @@ $job = {
             )
         foreach ($k in $keys)
             {
-                foreach ($p in $props) 
+                if (Test-Path -Path $k)
                     {
-                        [PSObject]@{
-                                Key = $k.name
-                                $p = (Get-ItemProperty -Path $k.name -Name $p).$p
-                            } 
+                        Get-ItemProperty -path $k | select -Property @{l='Key';e={ ($_.pspath -split '::')[-1] }},* -ExcludeProperty PS*
                     }
             }
     }
