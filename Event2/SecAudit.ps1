@@ -1,31 +1,30 @@
 <#
 
 .SYNOPSIS
-Master script that launches registered extension scripts, stores data on central share, and sends alerts if necessary
+Master script that launches registered extension scripts
 
 .DESCRIPTION
 This script is loaded into the task scheduler as a regular scheduled task by the install.ps1 script.  It will execute 
 all the scheduled jobs that have been registered by the install script, or the Register-Extension function, with the
 SecAudit tool.  The jobs are then collected and added to a common html report, which may or may not be encrypted.
-Encyption is selected by the -Encryption parameter and defaults to $true.  When run interactively the user is able to 
-select particular extensions to run using the extension parameter.
+Encyption is selected by the -Encryption switch.  
 
 .EXAMPLE
-
-$env:programfiles\SecAudit\SecAudit.ps1 -path c:\report.html -progress
+$env:programfiles\Security Audit\SecAudit.ps1 -path c:\report.html -progress
 
 Run the tool with a progress bar.  This will save the report to the local disk at C:\Report.html.
+
+.EXAMPLE
+$env:programfiles\Security Audit\SecAudit.ps1 -path \\server\share\report.html -encrypt
 
 .NOTES
 Written by the Kitton Mittons
 For the 2014 Winter Scripting Games
-Version 1.3
+Version 1.4
 Created on: 1/26/2014
-Last Modified: 1/31/2014
+Last Modified: 2/1/2014
 
-***One  outstanding item will be a switch to allow you to set schedules for the various extensions.  Seems to be a requirement for this task.
-
--requires PowerShell V3
+#requires -Version 3
 
 #>
 
@@ -43,12 +42,7 @@ Param
 
         # Enable encryption
         [Parameter(ParameterSetName="Default")]
-        [switch]$encrypt,
-           
-        # Path to network based key file
-        [Parameter(ParameterSetName="Default")]
-        [ValidateScript({(Test-Path -Path $_ -PathType Leaf) -and ($_.endswith('.xml'))})]
-        $keyPath = "\\Server\Share\Common\key.xml"
+        [switch]$encrypt
     )
 
 #region Initialize
@@ -78,7 +72,12 @@ Write-Debug "$($jobs.Count) jobs loaded in $root\Config.xml"
 Write-Verbose "Starting jobs"
 foreach ($n in $jobs.name)
     {
-        try {Start-Job -DefinitionName $n | Out-Null} 
+        try {
+                if (-not ((Get-ScheduledJob -Name $n).JobTriggers))
+                    {
+                        Start-Job -DefinitionName $n | Out-Null
+                    }
+            } 
         catch {Write-Warning "Unable to launch the job: $n"}
     }
 if ($progress)
@@ -103,18 +102,6 @@ Else
 
 #endregion RunScripts
 
-#region CheckKeyfile
-
-Write-Verbose "Checking key file"
-if (((Get-Item -Path $keyPath -ErrorAction SilentlyContinue).LastWriteTime -gt (Get-Item $root\key.xml).LastWriteTime) -and $encrypt)
-    {
-        Write-Verbose "Updating key file"
-        try {Copy-Item -Path $keyPath -Destination $root\key.xml -Force -ErrorAction Stop}
-        catch {Throw "Unable to copy latest version of key file"}
-    }
-
-#endregion CheckKeyfile
-
 #region HTMLReport
 
 Write-Verbose "Generating Report"
@@ -133,7 +120,10 @@ Foreach ($j in $jobs)
                 @"
 <h3> $($j.title) <h3>
 <br />
-$(if ((Get-Job -Name $j.name).ChildJobs[0].error) {"This job generated $((Get-Job -Name $j.name).ChildJobs[0].error.count) errors while running"})
+$(if ((Get-Job -Name $j.name).ChildJobs[0].error) 
+    {
+        "This job generated $((Get-Job -Name $j.name).ChildJobs[0].error.count) errors while running"
+    })
 <br />
 $(Receive-Job -Name $j.name | Select -property * -ExcludeProperty PSComputerName,RunspaceId,PSShowComputerName |
 ConvertTo-Html -As $j.format -Fragment | Out-String)
@@ -153,13 +143,14 @@ ConvertTo-Html -As $j.format -Fragment | Out-String)
 if ($encrypt)
     {
         Write-Verbose "Encrypting Module"
-        $report = ConvertTo-SecureString -String $report -AsPlainText -Key (Import-Clixml .\key.xml)
+        $report = ConvertTo-SecureString -String $report -AsPlainText -Force
     }
 
 #endregion Encryption
 
 #region SaveReport
-Write-Verbose "Writing report to $path"
+Write-Verbose "Writing report to Disk"
+Write-Debug "Storepath = $Path"
 Try {$report | Out-File -FilePath $Path}
 Catch 
     {
@@ -170,8 +161,17 @@ Catch
 #endregion SaveReport
 
 #region Exit
+Write-Verbose "Performing cleanup"
+Try {
+    Get-Job | where name -in ((Get-Extension -listAvailable).name) | Remove-Job
+    }
+Catch
+    {
+        Write-Error "Failed to cleanup old jobs"
+    }
 
 Write-Verbose "Setting lastexitcode for TaskScheduler"
+Write-Debug "LastExitCode = $LASTEXITCODE"
 exit $LASTEXITCODE
 
 #endregion Exit

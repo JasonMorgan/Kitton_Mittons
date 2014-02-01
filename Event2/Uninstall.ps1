@@ -16,6 +16,8 @@ Version 1.3
 Created on: 1/26/2014
 Last Modified: 2/1/2014
 
+#requires -Version 3
+
 #>
 Param
     (
@@ -23,11 +25,13 @@ Param
         [string]$ModulePath = "$env:USERPROFILE\Documents\WindowsPowerShell\Modules\SecAudit"
     )
 try {
-        Import-Clixml $path\config.xml -ErrorAction stop | foreach {Unregister-ScheduledJob -Name $_.name  -ErrorAction stop }
+        Import-module -name SecAudit 
+        Get-Extension -listAvailable | Unregister-Extension
         Remove-Item $Path -Recurse -ErrorAction stop
         Remove-Item $ModulePath -Recurse -ErrorAction stop
     }
 Catch 
     {
+        Write-Warning $_.exception.message
         Throw "Uninstall failed, please manually remove SecAudit files and unregister SecAudit Scheduled jobs"
     }

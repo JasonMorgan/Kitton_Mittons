@@ -18,6 +18,8 @@ Version 1.3
 Created on: 1/26/2014
 Last Modified: 1/31/2014
 
+#requires -Version 3
+
 #>
 [CmdletBinding(ConfirmImpact='High')]
 Param
@@ -68,7 +70,7 @@ Catch {Throw "Unable to create $Path\Config.xml"}
 Try {
         Copy-Item -Path $root\SecAudit.psm1 -Destination $ModulePath -Force -ErrorAction stop
         Copy-Item -Path $root\SecAudit.ps1 -Destination $Path -Force -ErrorAction stop
-        Copy-Item -Path $root\Key.xml -Destination $Path -Force -ErrorAction stop
+        Copy-Item -Path $root\Uninstall.ps1 -Destination $Path -Force -ErrorAction stop
         Copy-Item -Path $root\Extensions\* -Destination $Path\Extensions -ErrorAction stop
     }
 Catch

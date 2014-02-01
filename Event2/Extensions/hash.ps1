@@ -31,16 +31,6 @@ Param
         [switch]$Register
     )
 
-#region ExtensionHeader
-
-if ($Register)
-    {
-        $Name = "Files"
-        $title = "EXE info"
-        $format = "List"
-    }
-#endregion ExtensionHeader
-
 #region DefineFunctions
 Function Get-FileHash # This is not ours, we took it from Boe Prox's contribution to Technet
 { 
@@ -178,9 +168,9 @@ $job = {
 Switch ($Register)
     {
         $true {
-                $Name = "Shares"
-                $title = "Available Network Shares"
-                $format = "Table"
+                $Name = "Files"
+                $title = "EXE info"
+                $format = "List"
             }
         $false {$job.invoke()}
     }

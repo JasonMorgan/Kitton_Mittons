@@ -30,16 +30,6 @@ Param
         [switch]$Register
     )
 
-#region ExtensionHeader
-
-if ($Register)
-    {
-        $Name = "Software"
-        $title = "Installed Software"
-        $format = "Table"
-    }
-#endregion ExtensionHeader
-
 #region DefineFunctions
 Function Get-InstalledSoftware # This is a lot more function than we need but it is reused from my Technet posting - Jason
 { 
@@ -161,8 +151,8 @@ $job = {
 Switch ($Register)
     {
         $true {
-                $Name = "Shares"
-                $title = "Available Network Shares"
+                $Name = "Software"
+                $title = "Installed Software"
                 $format = "Table"
             }
         $false {$job.invoke()}

@@ -1,3 +1,5 @@
+#requires -Version 3
+
 #region FunctionsFromTechNet
 
 function Test-IsAdministrator # Taken from the TechNet Gallery, contribution by Ed Wilson
@@ -15,9 +17,9 @@ function Test-IsAdministrator # Taken from the TechNet Gallery, contribution by 
     (New-Object Security.Principal.WindowsPrincipal $currentUser).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator) 
 } #end function Test-IsAdministrator
 
-#endregion FunctionsFromTechNet 
+#endregion FunctionsFromTechNet
 
-Function Register-Extension
+Function Register-Extension #done
 {
 <#
 .SYNOPSIS
@@ -39,9 +41,9 @@ Creates a new Extension job with the specified Name, Title, Formatting, and Scri
 .NOTES
 Written by the Kitton Mittons
 For the 2014 Winter Scripting Games
-Version 1.0
+Version 1.3
 Created on: 1/26/2014
-Last Modified: 1/31/2014
+Last Modified: 2/1/2014
 #>
 [cmdletbinding(DefaultParameterSetName="Default")]
 Param 
@@ -102,7 +104,6 @@ Begin
 Process 
     {
         #region BuildScriptBlocks
-
         $default = {
                $scriptblock = [scriptblock]::Create($(Get-Content $Path | Out-String))
                 Try
@@ -171,8 +172,8 @@ Process
         #endregion BuildScriptBlocks
         
         #region Execution
-
         Write-Verbose "Registering Extension Job"
+        Write-Debug "Parameter set = $($PSCmdlet.ParameterSetName)"
         switch ($PSCmdlet.ParameterSetName)
             {
                 'Default' {
@@ -187,6 +188,7 @@ Process
                         Name = $Name  
                         Title = $Title
                         Format = $format
+                        Starttime = $null
                     }
         Write-Verbose "Loading Security Audit configuration file"
         Try {$jobs = {Import-Clixml -Path $installroot\Config.xml}.Invoke()}
@@ -210,18 +212,37 @@ Process
     }
 }
 
-Function Remove-Extension
+Function Unregister-Extension #done
 {
 <#
-.SYNOPSYS
+.SYNOPSIS
 Removes extensions that have been previously registered with the SecAudit tool
+
+.DESCRIPTION
+Removes a specified extension by name
+
+.EXAMPLE
+Unregister-Extension -Name Test
+
+Unregisters the Test extension from the Secaudit tool
+
+.EXAMPLE
+Get-Extension -name test | Unregister-Extension
+
+Unregisters the Test extension from the Secaudit tool
+
+.NOTES
+Written by the Kitton Mittons
+For the 2014 Winter Scripting Games
+Version 1.2
+Created on: 1/30/2014
+Last Modified: 2/1/2014
 
 #>
 Param 
     (
         # Enter the name of the Job to be removed
         [Parameter(Mandatory=$true,
-        ParameterSetName="job",
         ValueFromPipeline = $true,
         ValueFromPipelineByPropertyName = $true)]
         [string[]]$Name,
@@ -252,7 +273,7 @@ Process
             {
                 Write-Verbose "Removing $n"
                 Try {
-                        Remove-Job -Name $n -Force -ErrorAction stop
+                        Unregister-ScheduledJob -Name $n -Force -ErrorAction stop | Out-Null
                     }
                 catch 
                     {
@@ -261,42 +282,203 @@ Process
                     }
                 if (-not($skip))
                     {
-                        Import-Clixml -Path $Installroot\config.xml | where Name -Notlike $n |
-                        Export-Clixml -Path $Installroot\config.xml -Force
+                        Write-Verbose "Update Config.xml"
+                        Try {
+                                $jobs = Import-Clixml -Path $Installroot\config.xml | where Name -Notlike $n
+                                $jobs | Export-Clixml -Path $Installroot\config.xml -Force 
+                            }
+                        Catch
+                            {
+                                Write-Warning $_.exception.message
+                                Throw "Unable to update config.xml"
+                            }
                     }
                 else {$skip = $false}
             }
     }
 }
 
-Function Get-Extension 
+Function Get-Extension #done
 {
 <#
+.SYNOPSIS
+Gather data on an extension
+
+.DESCRIPTION
+Run in order to see details about one or more extensions
+
+.EXAMPLE
+Get-Extension -name test | set-extension -starttime (get-date 01:00:00)
+
+Grab the test extension and send it on to set-extension.
+
+.EXAMPLE
+Get-extension -listavailable
+
+List information about all currently registered extensions
+
+.NOTES
+Written by the Kitton Mittons
+For the 2014 Winter Scripting Games
+Version 1.1
+Created on: 1/31/2014
+Last Modified: 2/1/2014
 
 #>
+[cmdletbinding(DefaultParameterSetName="Default")]
 Param
     (
         # Enter the name of the Job
-        [Parameter()]
-        [string[]]$Name,
+        [Parameter(Mandatory=$true,
+        ParameterSetName="Default")]
+        [string]$Name,
+
+        # Activate to view all Jobs
+        [Parameter(ParameterSetName="list")]
+        [switch]$listAvailable,
 
         # List the path to the root folder for the SecAudit tool
-        [Parameter()]
+        [Parameter(ParameterSetName="Default")]
+        [Parameter(ParameterSetName="list")]
         [ValidateScript({Test-Path -Path $_ -PathType Container})]
         [string]$Installroot = "$env:ProgramFiles\Security Audit"
     )
-
-$jobs = Import-Clixml -Path $Installroot\Config.xml
-If ($Name)
-    {
-        $jobs = $jobs | where name -in $Name
+try {$jobs = Import-Clixml -Path $Installroot\Config.xml}
+Catch {
+        Write-Warning $_.exception.message
+        Throw "Unable to load config.xml"
     }
-$jobs
+Write-Debug "Parameter set = $($PSCmdlet.ParameterSetName)"
+switch ($PSCmdlet.ParameterSetName)
+            {
+                Default {$jobs | where name -like $Name}
+                List {$jobs}
+            }
 }
 
-function set-extension
+function Set-ExtensionSchedule #done
 {
-<##>
+<#
+.SYNOPSIS
+set properties on an extension
 
-#allows setting properties on existing jobs
+.DESCRIPTION
+Run in order to see details about one or more extensions
+
+.EXAMPLE
+Get-Extension -name test | Set-ExtensionSchedule -starttime (get-date 01:00:00)
+
+Grab the test extension and send it on to set-extensionSchedule.
+
+.EXAMPLE
+Set-ExtensionSchedule -name Test -starttime (get-date)
+
+Sets the starttime on the extension test to now
+
+.NOTES
+Written by the Kitton Mittons
+For the 2014 Winter Scripting Games
+Version 1.1
+Created on: 1/31/2014
+Last Modified: 2/1/2014
+#>
+[cmdletbinding(DefaultParameterSetName="Default")]
+Param
+    (
+        # Enter Extension starttime, will overwrite current value
+        [Parameter(Mandatory=$true,
+        ParameterSetName="Default")]
+        [datetime]$Starttime,
+
+        # Enter the name of the Job
+        [Parameter(Mandatory=$true,
+        ParameterSetName="Default",
+        ValueFromPipeline = $true,
+        ValueFromPipelineByPropertyName = $true)]
+        [Parameter(Mandatory=$true,
+        ValueFromPipeline = $true,
+        ParameterSetName="Rem")]
+        [string]$Name,
+        
+        # Activate to remove existing alternate Schedule
+        [Parameter(Mandatory = $true,
+        ParameterSetName="Rem")]
+        [switch]$RemoveSchedule,
+
+        # List the path to the root folder for the SecAudit tool
+        [Parameter(ParameterSetName="Default")]
+        [Parameter(ParameterSetName="Rem")]
+        [ValidateScript({Test-Path -Path $_ -PathType Container})]
+        [string]$Installroot = "$env:ProgramFiles\Security Audit"
+    )
+Begin 
+    {
+        #region LoadConfig
+        try {$Config = Import-Clixml -Path $Installroot\Config.xml}
+        Catch {
+                Write-Warning $_.exception.message
+                Throw "Unable to load config.xml"
+            }
+        #endregion LoadConfig
+
+        #region BuildScriptblocks
+        $rem = {
+                Try {$job = Get-ScheduledJob -Name $name}
+                Catch {Throw "Unable to retrieve extension for $name"}
+                Try {
+                        Write-Verbose "Removing Schedule"
+                        $job | Remove-JobTrigger -ErrorAction stop
+                    }
+                Catch
+                    {
+                        Write-Warning "Unable to remove triggers for $name"
+                    }
+                try {
+                        $new = $Config | where Name -Like $name
+                        $new.starttime = $null
+                    }
+                Catch
+                    {
+                        Write-Warning "Unable to update config.xml for $name"
+                    }
+            }
+        $Default = {
+                Try {$job = Get-ScheduledJob -Name $name}
+                Catch {Throw "Unable to retrieve extension for $name"}
+                try {$job | Set-ScheduledJob -Trigger (
+                            New-JobTrigger -Once -At $starttime -RepetitionInterval (
+                                    New-TimeSpan -Days 1
+                                ) -RepetitionDuration ([timespan]::MaxValue)
+                        )
+                    }
+                Catch
+                    {
+                        Write-Warning "Unable to add trigger to $name"
+                    }
+                try {
+                        $new = $Config | where Name -Like $name
+                        $new.starttime = $starttime 
+                    }
+                Catch
+                    {
+                        Write-Warning "Unable to update config.xml for $name"
+                    }    
+            }
+        #region BuildScriptblocks
+    }
+Process 
+    {
+        Write-Verbose "Updating $name"
+        Write-Debug "Parameter set = $($PSCmdlet.ParameterSetName)"
+        switch ($PSCmdlet.ParameterSetName)
+            {
+                Rem {$rem.Invoke()}
+                Default {$Default.Invoke()}
+            }
+        $Config = ($Config | where Name -NotLike $new.name) + $new
+        
+    }
+End {
+        $Config | Export-Clixml -Path $Installroot\Config.xml
+    }
 }
