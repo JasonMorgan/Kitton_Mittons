@@ -1,8 +1,25 @@
+#region FunctionsFromTechNet
+
+function Test-IsAdministrator # Taken from the TechNet Gallery, contribution by Ed Wilson
+{ 
+    <# 
+    .Synopsis 
+        Tests if the user is an administrator 
+    .Description 
+        Returns true if a user is an administrator, false if the user is not an administrator         
+    .Example 
+        Test-IsAdministrator 
+    #>    
+    param()  
+    $currentUser = [Security.Principal.WindowsIdentity]::GetCurrent() 
+    (New-Object Security.Principal.WindowsPrincipal $currentUser).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator) 
+} #end function Test-IsAdministrator
+
+#endregion FunctionsFromTechNet 
 
 Function Register-Extension
 {
 <#
-
 .SYNOPSIS
 Registers extension scripts
 
@@ -25,7 +42,6 @@ For the 2014 Winter Scripting Games
 Version 1.0
 Created on: 1/26/2014
 Last Modified: 1/31/2014
-
 #>
 [cmdletbinding(DefaultParameterSetName="Default")]
 Param 
@@ -63,6 +79,7 @@ Param
         # List the path to the root folder for the SecAudit tool
         [Parameter(ParameterSetName="Default")]
         [Parameter(ParameterSetName="job")]
+        [ValidateScript({Test-Path -Path $_ -PathType Container})]
         [string]$Installroot = "$env:ProgramFiles\Security Audit",
 
         # Use force to overwrite existing extensions
@@ -75,7 +92,11 @@ Begin
         if (-not (Test-Path $installroot\config.xml))
             {
                 Write-Warning "Unable to locate the Security Audit configuration file, config.xml, please verify your install and try again"
-                Throw "Operation aborted, install directoy not found at: $installroot"
+                Throw "Operation aborted, install directory not found at: $installroot"
+            }
+        If (-not(Test-IsAdministrator))
+            {
+                Throw "You must be an administrator to run this function"
             }
     }
 Process 
@@ -85,7 +106,7 @@ Process
         $default = {
                 Write-Verbose "Reading Extension Header"
                 . $Path -register
-                $scriptblock = [scriptblock]::Create($(Get-Content $Path | Out-String))
+               $scriptblock = [scriptblock]::Create($(Get-Content $Path | Out-String))
                 Try
                     {
                         Write-Verbose "Registering Job: $Name"
@@ -112,7 +133,7 @@ Process
                                 Write-Warning $_.exception.message
                                 Throw "Unable to register $Name"
                             }
-                    }       
+                    } 
             }
 
         $job = {
@@ -153,8 +174,8 @@ Process
         Write-Verbose "Registering Extension Job"
         switch ($PSCmdlet.ParameterSetName)
             {
-                Default {Invoke-Command -ScriptBlock $default}
-                Job {Invoke-Command -ScriptBlock $job}
+                'Default' {$default.Invoke()}
+                'Job' {$job.Invoke()}
             }
         Write-Verbose "Creating job configuration object"
         $job = New-Object -TypeName PSObject -Property @{ 
@@ -163,7 +184,7 @@ Process
                         Format = $format
                     }
         Write-Verbose "Loading Security Audit configuration file"
-        [System.Collections.ArrayList]$jobs += Import-Clixml -Path $installroot\Config.xml
+        $jobs = {Import-Clixml -Path $installroot\Config.xml}.Invoke()
         if ($Force)
             {
                 if ($jobs.name -contains $job.name)
@@ -174,7 +195,7 @@ Process
                     }
             }
         Write-Verbose "Updating Security Audit configuration file"
-        $jobs + $job | Export-Clixml -Path $installroot\Config.xml
+        $jobs + $job | Export-Clixml -Path $installroot\Config.xml -Force
 
         #endregion Execution
     }
@@ -182,5 +203,82 @@ Process
 
 Function Remove-Extension
 {
+<#
+.SYNOPSYS
+Removes extensions that have been previously registered with the SecAudit tool
 
+#>
+Param 
+    (
+        # Enter the name of the Job to be removed
+        [Parameter(Mandatory=$true,
+        ParameterSetName="job",
+        ValueFromPipeline = $true,
+        ValueFromPipelineByPropertyName = $true)]
+        [string[]]$Name,
+
+        # List the path to the root folder for the SecAudit tool
+        [Parameter()]
+        [ValidateScript({Test-Path -Path $_ -PathType Container})]
+        [string]$Installroot = "$env:ProgramFiles\Security Audit"
+    )
+Begin
+    {
+        Try 
+            {
+                Import-Module PSScheduledJob
+            }
+        catch
+            {
+                Throw "Unable to load scheduled jobs module"
+            }
+        If (-not(Test-IsAdministrator))
+            {
+                Throw "You must be an administrator to run this function"
+            }
+    }
+Process
+    {
+        foreach ($n in $Name)
+            {
+                Write-Verbose "Removing $n"
+                Try {
+                        Remove-Job -Name $n -Force -ErrorAction stop
+                    }
+                catch 
+                    {
+                        Write-Warning "Unable to remove $n"
+                        $skip = $true
+                    }
+                if (-not($skip))
+                    {
+                        Import-Clixml -Path $Installroot\config.xml | where Name -Notlike $n |
+                        Export-Clixml -Path $Installroot\config.xml -Force
+                    }
+                else {$skip = $false}
+            }
+    }
+}
+
+Function Get-Extension
+{
+<##>
+Param
+    (
+        # Enter the name of the Job
+        [Parameter()]
+        [string[]]$Name,
+
+        # List the path to the root folder for the SecAudit tool
+        [Parameter()]
+        [ValidateScript({Test-Path -Path $_ -PathType Container})]
+        [string]$Installroot = "$env:ProgramFiles\Security Audit"
+    )
+
+$jobs = Import-Clixml -Path $Installroot\Config.xml
+If ($Name)
+    {
+        $jobs = $jobs | where name -in $Name
+    }
+$jobs
 }

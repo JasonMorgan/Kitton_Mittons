@@ -23,17 +23,18 @@ Param
     )
 
 #region ExtensionHeader
-$Name = "Procs"
-$title = "Process Info"
-$format = "Table"
+
 if ($Register)
     {
-        Break
+        $Name = "Procs"
+        $title = "Process Info"
+        $format = "Table"    
     }
 #endregion ExtensionHeader
 
 #region GatherData
-
-Get-CimInstance win32_process | Select Name,Path,CreationDate,ExecutablePath
-
+if (-not($Register))
+    {
+        Get-CimInstance win32_process | Select Name,Path,CreationDate,ExecutablePath
+    }
 #endregion GatherData

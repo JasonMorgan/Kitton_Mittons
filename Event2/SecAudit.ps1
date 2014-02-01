@@ -4,8 +4,17 @@
 Master script that launches registered extension scripts, stores data on central share, and sends alerts if necessary
 
 .DESCRIPTION
+This script is loaded into the task scheduler as a regular scheduled task by the install.ps1 script.  It will execute 
+all the scheduled jobs that have been registered by the install script, or the Register-Extension function, with the
+SecAudit tool.  The jobs are then collected and added to a common html report, which may or may not be encrypted.
+Encyption is selected by the -Encryption parameter and defaults to $true.  When run interactively the user is able to 
+select particular extensions to run using the extension parameter.
 
 .EXAMPLE
+
+$env:programfiles\SecAudit\SecAudit.ps1 -path c:\report.html -encryption:$false -progress
+
+Run the tool with a progress bar.  This will save the report to the local disk at C:\Report.html.
 
 .NOTES
 Written by the Kitton Mittons
@@ -19,6 +28,7 @@ Last Modified: 1/26/2014
 -requires PowerShell V3
 
 #>
+
 [cmdletbinding()]
 Param 
     (
@@ -34,36 +44,40 @@ Param
         # Set path to store the report
         [Parameter(ParameterSet="Default")]
         [Parameter(ParameterSet="local")]
+        [ValidateScript({Test-Path -Path (Split-Path -parent $_)})]
         $Path = "\\Server\Share\Reports\$(Get-Date -Format MM_dd_yyyy)\$env:COMPUTERNAME",
         
         # Path to network based key file
         [Parameter(ParameterSet="Default")]
+        [ValidateScript({(Test-Path -Path $_ -PathType Leaf) -and ($_.endswith('.xml'))})]
         $keyPath = "\\Server\Share\Common\key.xml",
-        
-        # Email address for notifications
-        [Parameter(ParameterSet="Default")]
-        $EmailAddress,
         
         # Specify Extensions to be run
         [Parameter(ParameterSet="local")]
         [ValidateSet({(Import-Clixml .\Config.xml | select -ExpandProperty Name),"all"})] # not sure if this works
-        [string[]]$extension = "All",
-        
-        # 
-        [Parameter(ParameterSet="list")]
-        [switch]$listextension
+        [string[]]$extension = "All"
     )
+
 #region Initialize
+
+Write-Verbose "Determining root directory"
+$root = Split-Path $($MyInvocation.MyCommand.path)
+Write-Debug "`$root = $root"
 Write-Verbose "Import Scheduled Jobs Module"
-Try {Import-Module -Name PSScheduledJob} Catch {Throw "Unable to load Scheduled Jobs Module"}
-If ($listextension)
+Try {Import-Module -Name PSScheduledJob} 
+Catch {Throw "Unable to load Scheduled Jobs Module"}
+Write-Verbose "Importing SecAudit"
+Try {Import-Module -Name SecAudit}
+Catch {Throw "Unable to load the SecAudit Module, please verify your install"}
+Write-Verbose "Admin check"
+if (-not(Test-IsAdministrator))
     {
-        Write-Verbose "Listing Extensions"
-        Import-Clixml .\Config.xml
-        break
+        Throw "Operation Aborted: You are not authorized to run this command"
     }
-#load config file
-try {$jobs = Import-Clixml .\Config.xml} Catch {Throw "Unable to load config.xml, please verify that SecAudit has been deployed correctly"}
+Write-Verbose "Load config.xml"
+try {$jobs = Import-Clixml $root\Config.xml} Catch {Throw "Unable to load config.xml, please verify that SecAudit has been deployed correctly"}
+Write-Debug "$($jobs.Count) jobs loaded in $root\Config.xml"
+
 #endregion Initialize
 
 #region RunScripts
@@ -71,7 +85,8 @@ try {$jobs = Import-Clixml .\Config.xml} Catch {Throw "Unable to load config.xml
 Write-Verbose "Starting jobs"
 foreach ($n in $jobs.name)
     {
-        try {Start-Job -DefinitionName $n} catch {Write-Warning "Unable to launch the job: $n"}
+        try {Start-Job -DefinitionName $n} 
+        catch {Write-Warning "Unable to launch the job: $n"}
     }
 if ($progress)
     { 
@@ -83,6 +98,8 @@ if ($progress)
                         PercentComplete = ((((Get-Job).state -contains "Completed").count)/(Get-Job).Count)
                     }
                 Write-Progress @params
+                Write-Verbose "running 1 second delay"
+                Start-Sleep -Seconds 1
            }
         While ((Get-Job).state -contains "Running")
     }
@@ -94,36 +111,21 @@ Else
 
 #endregion RunScripts
 
-#region TestShare
-#be able to start network watcher job
-if (Test-Path -Path (Split-Path $Path))
-    {
-        #Test-write
-        Try
-            {
-                New-Item -ItemType file -Path $Path -Force
-            }
-        Catch
-            {
-                $nowrite = $true
-            }
-    }
-Else {$notfound = $true}
-#be able to switch to local store on failure
-#endregion TestShare
-
-
 #region CheckKeyfile
 
-if ((Get-Item -Path $keyPath).LastWriteTime -gt (Get-Item .\key.xml).LastWriteTime)
+Write-Verbose "Checking key file"
+if (((Get-Item -Path $keyPath).LastWriteTime -gt (Get-Item .\key.xml).LastWriteTime) -and $encrypt)
     {
-        Copy-Item -Path $keyPath -Destination .\key.xml -Force -ErrorAction Stop
+        Write-Verbose "Updating key file"
+        try {Copy-Item -Path $keyPath -Destination .\key.xml -Force -ErrorAction Stop}
+        catch {Throw "Unable to copy latest version of key file"}
     }
 
 #endregion CheckKeyfile
 
 #region HTMLReport
 
+Write-Verbose "Generating Report"
 $report = @"
 HTMLhead
 
@@ -153,13 +155,26 @@ HTMLTail
 
 if ($encrypt)
     {
+        Write-Verbose "Encrypting Module"
         $report = ConvertTo-SecureString -String $report -AsPlainText -Key (Import-Clixml .\key.xml)
     }
 
 #endregion Encryption
 
 #region SaveReport
-
-$report | Out-File -FilePath $Path
+Write-Verbose "Writing report to $path"
+Try {$report | Out-File -FilePath $Path}
+Catch 
+    {
+        Write-Error $_.exception.message
+        Throw "Unable to save $report"
+    }
 
 #endregion SaveReport
+
+#region Exit
+
+Write-Verbose "Setting lastexitcode for TaskScheduler"
+exit $LASTEXITCODE
+
+#endregion Exit
