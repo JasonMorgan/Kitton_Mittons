@@ -28,7 +28,7 @@ Param
     {
 $Name = "Env"
 $title = "Environmental Variables"
-$format = "List"
+$format = "Table"
     }
 #endregion SetVariables
 

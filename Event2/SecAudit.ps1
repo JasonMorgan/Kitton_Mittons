@@ -12,7 +12,7 @@ select particular extensions to run using the extension parameter.
 
 .EXAMPLE
 
-$env:programfiles\SecAudit\SecAudit.ps1 -path c:\report.html -encryption:$false -progress
+$env:programfiles\SecAudit\SecAudit.ps1 -path c:\report.html -progress
 
 Run the tool with a progress bar.  This will save the report to the local disk at C:\Report.html.
 
@@ -32,30 +32,23 @@ Last Modified: 1/31/2014
 [cmdletbinding()]
 Param 
     (
+         # Set path to store the report
+        [Parameter(ParameterSetName="Default")]
+        [ValidateScript({Test-Path -Path (Split-Path -parent $_)})]
+        $Path = "c:\$env:COMPUTERNAME.html",
+
         # Enable the progress bar
-        [Parameter(ParameterSet="Default")]
-        [Parameter(ParameterSet="local")]
+        [Parameter(ParameterSetName="Default")]
         [switch]$progress,
 
         # Enable encryption
-        [Parameter(ParameterSet="Default")]
-        [bool]$encrypt = $true,
-        
-        # Set path to store the report
-        [Parameter(ParameterSet="Default")]
-        [Parameter(ParameterSet="local")]
-        [ValidateScript({Test-Path -Path (Split-Path -parent $_)})]
-        $Path = "\\Server\Share\Reports\$(Get-Date -Format MM_dd_yyyy)\$env:COMPUTERNAME",
-        
+        [Parameter(ParameterSetName="Default")]
+        [switch]$encrypt,
+           
         # Path to network based key file
-        [Parameter(ParameterSet="Default")]
+        [Parameter(ParameterSetName="Default")]
         [ValidateScript({(Test-Path -Path $_ -PathType Leaf) -and ($_.endswith('.xml'))})]
-        $keyPath = "\\Server\Share\Common\key.xml",
-        
-        # Specify Extensions to be run
-        [Parameter(ParameterSet="local")]
-        [ValidateSet({(Import-Clixml .\Config.xml | select -ExpandProperty Name),"all"})] # not sure if this works
-        [string[]]$extension = "All"
+        $keyPath = "\\Server\Share\Common\key.xml"
     )
 
 #region Initialize
@@ -85,21 +78,20 @@ Write-Debug "$($jobs.Count) jobs loaded in $root\Config.xml"
 Write-Verbose "Starting jobs"
 foreach ($n in $jobs.name)
     {
-        try {Start-Job -DefinitionName $n} 
+        try {Start-Job -DefinitionName $n | Out-Null} 
         catch {Write-Warning "Unable to launch the job: $n"}
     }
 if ($progress)
     { 
         Write-Verbose "Create progress bar"
         do {
+                $JobData = Get-Job | where {($_.PSJobTypeName -Like "PSScheduledJob") -and ($_.Name -in $jobs.name)}
                 $params = @{
                         Activity = "Running Security Audit" 
-                        Status = "Completed $(((Get-Job).state -contains "Completed").count) of $((Get-Job).Count) jobs" 
-                        PercentComplete = ((((Get-Job).state -contains "Completed").count)/(Get-Job).Count)
+                        Status = "Completed $(($JobData | where State -like "Completed").count) of $($JobData.Count) jobs" 
+                        PercentComplete = (($JobData | where State -like "Completed").count/$JobData.Count * 100)
                     }
                 Write-Progress @params
-                Write-Verbose "running 1 second delay"
-                Start-Sleep -Seconds 1
            }
         While ((Get-Job).state -contains "Running")
     }
@@ -114,10 +106,10 @@ Else
 #region CheckKeyfile
 
 Write-Verbose "Checking key file"
-if (((Get-Item -Path $keyPath).LastWriteTime -gt (Get-Item .\key.xml).LastWriteTime) -and $encrypt)
+if (((Get-Item -Path $keyPath -ErrorAction SilentlyContinue).LastWriteTime -gt (Get-Item $root\key.xml).LastWriteTime) -and $encrypt)
     {
         Write-Verbose "Updating key file"
-        try {Copy-Item -Path $keyPath -Destination .\key.xml -Force -ErrorAction Stop}
+        try {Copy-Item -Path $keyPath -Destination $root\key.xml -Force -ErrorAction Stop}
         catch {Throw "Unable to copy latest version of key file"}
     }
 
@@ -127,7 +119,11 @@ if (((Get-Item -Path $keyPath).LastWriteTime -gt (Get-Item .\key.xml).LastWriteT
 
 Write-Verbose "Generating Report"
 $report = @"
-HTMLhead
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>Security Audit Report</title>
+</head><body>
 
 $(
 Foreach ($j in $jobs)
@@ -136,17 +132,18 @@ Foreach ($j in $jobs)
             {
                 @"
 <h3> $($j.title) <h3>
-<br>
+<br />
 $(if ((Get-Job -Name $j.name).ChildJobs[0].error) {"This job generated $((Get-Job -Name $j.name).ChildJobs[0].error.count) errors while running"})
-<br>
-$(Receive-Job -Name $j.name | ConvertTo-Html -As $j.format -Fragment | Out-String)
-<br>
+<br />
+$(Receive-Job -Name $j.name | Select -property * -ExcludeProperty PSComputerName,RunspaceId,PSShowComputerName |
+ConvertTo-Html -As $j.format -Fragment | Out-String)
+<br />
 "@
             }
     }
 )
 
-HTMLTail
+</body></html>
 "@
 
 #endregion HTMLReport

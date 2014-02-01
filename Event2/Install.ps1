@@ -84,7 +84,7 @@ Catch {Throw "Unable to load the SecAudit Module, the install has failed"}
 $extensions = Get-ChildItem -Path $Path\Extensions 
 foreach ($e in $extensions) 
     { 
-        Try {$e | Register-Extension -force }
+        Try {$e | Register-Extension -force | Out-Null}
         Catch {Write-Warning "Unable to properly register $($e.FullName)"}
     }
 #endregion RegisterScripts

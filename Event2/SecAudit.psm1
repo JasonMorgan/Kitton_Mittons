@@ -271,7 +271,9 @@ Process
 
 Function Get-Extension 
 {
-<##>
+<#
+
+#>
 Param
     (
         # Enter the name of the Job
@@ -290,4 +292,11 @@ If ($Name)
         $jobs = $jobs | where name -in $Name
     }
 $jobs
+}
+
+function set-extension
+{
+<##>
+
+#allows setting properties on existing jobs
 }

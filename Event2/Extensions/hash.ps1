@@ -27,7 +27,7 @@ if ($Register)
     {
         $Name = "Files"
         $title = "EXE info"
-        $format = "Table"
+        $format = "List"
     }
 #endregion ExtensionHeader
 
@@ -152,11 +152,11 @@ Function Get-FileHash # This is not ours, we took it from Boe Prox's contributio
 
 #region GatherData
 
-$files = Get-ChildItem -Recurse -Include *.exe -ErrorAction SilentlyContinue -Path $env:SystemRoot
+$files = Get-ChildItem -Recurse -Include *.exe -ErrorAction SilentlyContinue -Path $env:SystemRoot\system32
 
 Foreach ($f in $files)
     {
-        New-Object -TypeName PSObject -Property @{
+        [pscustomobject]@{
                 Name = $f.FullName
                 CreationTime = $f.CreationTime
                 LastWriteTime = $f.LastWriteTime

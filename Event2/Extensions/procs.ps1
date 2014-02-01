@@ -28,7 +28,7 @@ if ($Register)
     {
         $Name = "Procs"
         $title = "Process Info"
-        $format = "Table"    
+        $format = "List"    
     }
 #endregion ExtensionHeader
 
