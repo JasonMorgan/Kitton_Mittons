@@ -94,7 +94,7 @@ Process
             {
                 Write-Verbose "Creating Object"
                 New-Object -TypeName PSObject -Property @{
-                        FolderName = $Path[0]
+                        FolderName = $Path
                         "FolderSize_$($unit.toupper())" = $([math]::Round(($size.sum / $value), 2)) 
                     }
             }

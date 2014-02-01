@@ -397,6 +397,7 @@ Param
         ValueFromPipelineByPropertyName = $true)]
         [Parameter(Mandatory=$true,
         ValueFromPipeline = $true,
+        ValueFromPipelineByPropertyName = $true,
         ParameterSetName="Rem")]
         [string]$Name,
         
@@ -434,6 +435,7 @@ Begin
                         Write-Warning "Unable to remove triggers for $name"
                     }
                 try {
+                        Write-Debug "Name = $name"
                         $new = $Config | where Name -Like $name
                         $new.starttime = $null
                     }

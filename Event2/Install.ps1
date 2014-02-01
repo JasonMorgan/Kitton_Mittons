@@ -79,6 +79,22 @@ Catch
     }
 #endregion CopyFiles
 
+#region ScheduleMaster
+
+$triggerParam = @{
+        at = get-date 23:59:59
+        RepetitionInterval = New-TimeSpan -Hours 24 
+        RepetitionDuration = ([timespan]::MaxValue)
+    }
+try {
+        Register-ScheduledJob -Trigger (New-JobTrigger -Once @triggerParam) -ScriptBlock {
+                & "$env:ProgramFiles\Security Audit\SecAud.ps1" -path \\Server\Share\$env:COMPUTERNAME.ps1 -encrypt
+            } -Name Master -ScheduledJobOption (New-ScheduledJobOption -RunElevated -HideInTaskScheduler) |
+        Out-Null
+    }
+Catch {Throw "Unable to register SecAudit Master script"}
+#endregion ScheduleMaster
+
 #region RegisterScripts
 Write-Verbose "Importing SecAudit"
 Try {Import-Module -Name SecAudit}

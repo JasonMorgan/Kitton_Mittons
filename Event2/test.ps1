@@ -1,1 +1,0 @@
-﻿#Requires -RunAsAdministrator

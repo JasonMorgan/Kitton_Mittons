@@ -26,9 +26,10 @@ Param
     )
 try {
         Import-module -name SecAudit 
-        Get-Extension -listAvailable | Unregister-Extension
+        Get-Extension -listAvailable | Unregister-Extension -ErrorAction SilentlyContinue
         Remove-Item $Path -Recurse -ErrorAction stop
         Remove-Item $ModulePath -Recurse -ErrorAction stop
+        Unregister-ScheduledJob -Name Master
     }
 Catch 
     {

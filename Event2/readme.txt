@@ -2,46 +2,31 @@ Description:
 The SecAudit tool runs in the following configuration -
 
 	One master script that launches all the extension scripts when triggered
-	Extension scripts are written with a particular header, the header is documented in the extension header section
+	Extension scripts are written with a particular header
 
-There is a register-extension script to load new extensions into the tool
+There is a register-extension function to load new extensions into the tool
+Essentially every extension is built as a scheduled job and the master script, SecAudit.ps1, calls those jobs when triggered
 
-Essentially every extension is built as a scheduled job and the master script, SecAudit, runs as a scheduled task
+An install and uninstall script are provided to deploy the scripts, run the register-extension for every extension you wish to add beyond the default
 
-An install and uninstall script will be provided to deploy the scripts, run the register-extensions script for every extension file, and create a new scheduled task for the SecAudit tool.
 
-Common criteria
-Master runs as system
-Uses scheduled task - hidden
+To Install:
+Add extension scripts to a folder called extensions in your download folder
+run install.ps1
 
-Root:
-Master script in root - run as system
-Key file
-register extension script
-Config.xml
+To add a custom extension:
+Use Register-Extension from the SecAudit Module
 
-Network share for storing reports - Encryption available
-Common HTML report
+To uninstall:
+Call the uninstall.ps1 script.
 
-Entension Header:
-Param 
-    (
-        [switch]$Register
-    )
-
-#region SetVariables
-$Name = "Env" - job name
-$title = "Environmental Variables" - Report title
-$format = "Table" - report format
-#endregion SetVariables
-
-Extensions:
+Included Extensions:
 Env
+Disks
 Reg
-FileSystem - Core folder size and disks
-FileHash - Hash all dlls and exes
+FolderSize
+Hash 
 InstalledSoftware
 Processes
 Services
 NetworkShares
-Eventlogs - properties and last purge
