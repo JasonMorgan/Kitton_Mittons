@@ -22,17 +22,18 @@ Param
     )
 
 #region ExtensionHeader
-$Name = "Files"
-$title = "EXE info"
-$format = "Table"
+
 if ($Register)
     {
-        Break
+        $Name = "Files"
+        $title = "EXE info"
+        $format = "Table"
     }
 #endregion ExtensionHeader
 
 #region DefineFunctions
-
+if (-not($Register))
+    {
 Function Get-FileHash # This is not ours, we took it from Boe Prox's contribution to Technet
 { 
     <#
@@ -163,5 +164,5 @@ Foreach ($f in $files)
                 Hash = try {($f | Get-FileHash -Algorithm MD5 -ErrorAction stop).MD5} catch {"Unable to generate hash"}
             }
     } 
-
+    }
 #endregion GathertData

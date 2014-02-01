@@ -23,12 +23,12 @@ Param
     )
 
 #region ExtensionHeader
-$Name = "FolderSize"
-$title = "Key Folders"
-$format = "Table"
+
 if ($Register)
     {
-        Break
+        $Name = "FolderSize"
+        $title = "Key Folders"
+        $format = "Table"    
     }
 #endregion ExtensionHeader
 

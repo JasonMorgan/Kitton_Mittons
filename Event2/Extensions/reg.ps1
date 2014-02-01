@@ -23,16 +23,18 @@ Param
     )
 
 #region ExtensionHeader
-$Name = "Reg"
-$title = "AutoRun Keys"
-$format = "List"
+
 if ($Register)
     {
-        Break
+        $Name = "Reg"
+        $title = "AutoRun Keys"
+        $format = "List"
     }
 #endregion ExtensionHeader
 
 #region GatherData
+if (-not($Register))
+    {
 Write-Verbose "Adding HKU"
 New-PSDrive -PSProvider Registry -Root HKEY_USERS -Name HKU
 New-PSDrive -PSProvider Registry -Root HKEY_CLASSES_ROOT -Name HKCR
@@ -86,3 +88,4 @@ foreach ($k in $keys)
         "HKCU:\Control Panel\Desktop" #the "SCRNSAVE.EXE" value is the only autorun value#
         "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" # the "sHELL" value is the only autorun Value#
         "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager" #the "BootExecute" value is the only autorun value#
+    }

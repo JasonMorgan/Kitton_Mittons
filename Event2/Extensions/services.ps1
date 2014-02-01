@@ -23,17 +23,18 @@ Param
     )
 
 #region ExtensionHeader
-$Name = "Services"
-$title = "Service Info"
-$format = "List"
+
 if ($Register)
     {
-        Break
+        $Name = "Services"
+        $title = "Service Info"
+        $format = "List"
     }
 #endregion ExtensionHeader
 
 #region GatherData
-
+if (-not($Register))
+    {
 Get-CimInstance Win32_service  | Select Name,ProcessID,State,StartName,PathName,ExitCode
-
+    }
 #endregion GatherData

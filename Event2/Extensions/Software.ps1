@@ -23,17 +23,18 @@ Param
     )
 
 #region ExtensionHeader
-$Name = "Software"
-$title = "Installed Software"
-$format = "Table"
+
 if ($Register)
     {
-        Break
+        $Name = "Software"
+        $title = "Installed Software"
+        $format = "Table"
     }
 #endregion ExtensionHeader
 
 #region DefineFunctions
-
+if (-not($Register))
+    {
 Function Get-InstalledSoftware # This is a lot more function than we need but it is reused from my Technet posting - Jason
 { 
 <# 
@@ -148,5 +149,5 @@ End {
 #region GatherData
 
 Get-InstalledSoftware | Select Name,Publisher,Version,InstallDate
-
+    }
 #endregion GatherData

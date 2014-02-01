@@ -104,8 +104,6 @@ Process
         #region BuildScriptBlocks
 
         $default = {
-                Write-Verbose "Reading Extension Header"
-                . $Path -register
                $scriptblock = [scriptblock]::Create($(Get-Content $Path | Out-String))
                 Try
                     {
@@ -114,13 +112,14 @@ Process
                     }
                 Catch 
                     {
-                        if ((Get-Job -Name $Name ) -and ($Force))
+                        if ((Get-ScheduledJob -Name $Name ) -and ($Force))
                             {
-                                Remove-Job -Name $Name -Force
+                                Unregister-ScheduledJob -Name $Name -Force
                                 Write-Verbose "Registering Job: $Name"
                                 Try 
                                     {
-                                        Register-ScheduledJob -Name $Name -ScriptBlock $scriptblock -MaxResultCount 1 -ErrorAction Stop
+                                        Register-ScheduledJob -Name $Name -ScriptBlock $scriptblock -MaxResultCount 1 -ErrorAction Stop | 
+                                        Out-Null
                                     }
                                 catch
                                     {
@@ -131,6 +130,7 @@ Process
                         Else
                             {
                                 Write-Warning $_.exception.message
+                                Write-Warning "Outerblock"
                                 Throw "Unable to register $Name"
                             }
                     } 
@@ -146,11 +146,12 @@ Process
                     {
                         if ((Get-Job -Name $Name ) -and ($Force))
                             {
-                                Remove-Job -Name $Name -Force
+                                Unregister-ScheduledJob -Name $Name -Force
                                 Write-Verbose "Registering Job: $Name"
                                 Try 
                                     {
-                                        Register-ScheduledJob -Name $Name -ScriptBlock $Scriptblock -MaxResultCount 1 -ErrorAction Stop
+                                        Register-ScheduledJob -Name $Name -ScriptBlock $Scriptblock -MaxResultCount 1 -ErrorAction Stop |
+                                        Out-Null
                                     }
                                 catch
                                     {
@@ -174,7 +175,11 @@ Process
         Write-Verbose "Registering Extension Job"
         switch ($PSCmdlet.ParameterSetName)
             {
-                'Default' {$default.Invoke()}
+                'Default' {
+                        Write-Verbose "Reading Extension Header"
+                        . $Path -register
+                        $default.Invoke()
+                    }
                 'Job' {$job.Invoke()}
             }
         Write-Verbose "Creating job configuration object"
@@ -184,7 +189,11 @@ Process
                         Format = $format
                     }
         Write-Verbose "Loading Security Audit configuration file"
-        $jobs = {Import-Clixml -Path $installroot\Config.xml}.Invoke()
+        Try {$jobs = {Import-Clixml -Path $installroot\Config.xml}.Invoke()}
+        Catch {
+                if ((Get-Item $installroot\Config.xml).length -eq 0) {$jobs = @()}
+                Else {Throw "Unable to load config.xml"}
+            }
         if ($Force)
             {
                 if ($jobs.name -contains $job.name)
@@ -195,8 +204,8 @@ Process
                     }
             }
         Write-Verbose "Updating Security Audit configuration file"
-        $jobs + $job | Export-Clixml -Path $installroot\Config.xml -Force
-
+        Try {$jobs + $job | Export-Clixml -Path $installroot\Config.xml -Force -ErrorAction Stop}
+        Catch {Write-warning "Failed to register"}
         #endregion Execution
     }
 }

@@ -23,16 +23,18 @@ Param
     )
 
 #region ExtensionHeader
-$Name = "Disks"
-$title = "Local Disks"
-$format = "Table"
+
 if ($Register)
     {
-        Break
+        $Name = "Disks"
+        $title = "Local Disks"
+        $format = "Table"
     }
 #endregion ExtensionHeader
 
 #region GatherData
+if (-not($Register))
+    {
 $Type = @{
         '0' = 'Unknown'
         '1' = 'No Root Directory'
@@ -45,5 +47,5 @@ $Type = @{
 
 Get-CimInstance win32_volume  | Select Caption,InstallDate,DeviceID,
 @{ l='DriveType';e={ $Type.item("$($_.DriveType)") } },AutoMount,DriveLetter,capacity,freespace
-
+    }
 #endregion GatherData

@@ -23,17 +23,18 @@ Param
     )
 
 #region ExtensionHeader
-$Name = "Shares"
-$title = "Available Network Shares"
-$format = "Table"
+
 if ($Register)
     {
-        Break
+        $Name = "Shares"
+        $title = "Available Network Shares"
+        $format = "Table"
     }
 #endregion ExtensionHeader
 
 #region GatherData
-
+if (-not($Register))
+    {
 Write-Verbose "Collecting Shares"
 $types = @{
         "0" = "Disk Drive"
@@ -46,5 +47,5 @@ $types = @{
         "2147483651" =  "IPC Admin"   
     }
 Get-CimInstance win32_share | select Name,Description,Status,@{l="Type";e={ $types.Item("$($_.type)") } },Path
-
+    }
 #endregion GatherData

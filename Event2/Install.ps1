@@ -29,11 +29,6 @@ Param
         [string]$ModulePath = "$env:USERPROFILE\Documents\WindowsPowerShell\Modules\SecAudit"
     )
 #region Initialize
-Write-Verbose "Admin check"
-if (-not(Test-IsAdministrator))
-    {
-        Throw "Operation Aborted: You are not authorized to run this command"
-    }
 Write-Verbose "Determining root directory"
 try {$root = Split-Path $($MyInvocation.MyCommand.path)}
 catch {Throw "Unable to establish Root Directory"}
@@ -86,6 +81,10 @@ Catch
 Write-Verbose "Importing SecAudit"
 Try {Import-Module -Name SecAudit}
 Catch {Throw "Unable to load the SecAudit Module, the install has failed"}
-Try {Get-ChildItem -Path $Path\Extensions | Register-Extension -force }
-Catch {Write-Warning "Unable to properly register all extension scripts, please manually verify the extensions"}
+$extensions = Get-ChildItem -Path $Path\Extensions 
+foreach ($e in $extensions) 
+    { 
+        Try {$e | Register-Extension -force }
+        Catch {Write-Warning "Unable to properly register $($e.FullName)"}
+    }
 #endregion RegisterScripts

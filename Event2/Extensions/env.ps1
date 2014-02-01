@@ -24,28 +24,17 @@ Param
     )
 
 #region SetVariables
+    if ($Register)
+    {
 $Name = "Env"
 $title = "Environmental Variables"
 $format = "List"
+    }
 #endregion SetVariables
 
 #region GatherData
-
+if (-not($Register))
+    {
 Get-ChildItem Env: | Select Name,Value
-
+    }
 #endregion GatherData
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-}
