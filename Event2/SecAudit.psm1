@@ -260,7 +260,7 @@ Process
     }
 }
 
-Function Get-Extension
+Function Get-Extension 
 {
 <##>
 Param

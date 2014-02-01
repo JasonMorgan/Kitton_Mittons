@@ -19,9 +19,9 @@ Run the tool with a progress bar.  This will save the report to the local disk a
 .NOTES
 Written by the Kitton Mittons
 For the 2014 Winter Scripting Games
-Version 1.0
+Version 1.3
 Created on: 1/26/2014
-Last Modified: 1/26/2014
+Last Modified: 1/31/2014
 
 ***One  outstanding item will be a switch to allow you to set schedules for the various extensions.  Seems to be a requirement for this task.
 
