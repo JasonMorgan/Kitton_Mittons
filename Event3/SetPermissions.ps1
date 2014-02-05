@@ -54,32 +54,32 @@ $sb = {
             $permSet.allow
         )
     }
-
+$sba = {
+        ## repeat A
+        Write-Verbose "Create Access Control Entry"
+        $ace = $sb.Invoke()
+        Write-Verbose "Add ACE to ACL"
+        $fol.AddAccessRule($ace)
+        Write-Debug "`$ACE : $($ace.IdentityReference)"
+        ##
+    }
 
 #endregion ScriptBlocks
 
 #region DefineRoot
 
-## repeat A
-Write-Verbose "Create Access Control Entry"
-$ace = $sb.Invoke()
+##Repeat C
 $fol = Get-Acl
-Write-Verbose "Add ACE to ACL"
-$fol.AddAccessRule($ace)
-Write-Debug "`$ACE : $($ace.IdentityReference)"
 ##
+
+$sba.Invoke()
 
 Write-Verbose "Modify permissions for $(Get-Location)"
 $permSet.permissions = [System.Security.AccessControl.FileSystemRights]"Read, Traverse"
 $permSet.propagation = [System.Security.AccessControl.PropagationFlags]::None
 $permSet.group = New-Object System.Security.Principal.NTAccount('F9VS\Temp_All')
 
-## repeat A
-Write-Verbose "Create Access Control Entry"
-$ace = $sb.Invoke()
-$fol.AddAccessRule($ace)
-Write-Debug "`$ACE : $($ace.IdentityReference)"
-##
+$sba.Invoke()
 
 ##Repeat B
 $ACEStore.Add((Get-Location).path,$fol)
@@ -100,25 +100,14 @@ $permSet.group = New-Object System.Security.Principal.NTAccount('F9VS\Temp_Finan
 ##Repeat C
 $fol = Get-Acl
 
-## repeat A
-Write-Verbose "Create Access Control Entry"
-$ace = $sb.Invoke()
-Write-Verbose "Add ACE to ACL"
-$fol.AddAccessRule($ace)
-Write-Debug "`$ACE : $($ace.IdentityReference)"
-##
+$sba.Invoke()
 
+Write-Verbose "Modify permissions for $(Get-Location)"
 $permSet.permissions = [System.Security.AccessControl.FileSystemRights]"Read, Traverse"
 $permSet.propagation = [System.Security.AccessControl.PropagationFlags]::None
 $permSet.group = New-Object System.Security.Principal.NTAccount('F9VS\Temp_All')
 
-## repeat A
-Write-Verbose "Create Access Control Entry"
-$ace = $sb.Invoke()
-Write-Verbose "Add ACE to ACL"
-$fol.AddAccessRule($ace)
-Write-Debug "`$ACE : $($ace.IdentityReference)"
-##
+$sba.Invoke()
 
 ## Repeat B
 $ACEStore.Add((Get-Location).path,$fol)
@@ -140,45 +129,51 @@ Foreach ($g in ($dept.Members | foreach {$_.split(',')[0].trimstart('CN=')}))
         New-Item -ItemType directory -Path $g | Set-Location
         Write-Debug "Current path: $(get-location)"
 
+
+
         #region TeamRootPermissions
-        $perm = [System.Security.AccessControl.FileSystemRights]"Read, Write, traverse, delete"
-        $inh = [System.Security.AccessControl.InheritanceFlags]::None
-        $prop = [System.Security.AccessControl.PropagationFlags]::InheritOnly
-        $allow = [System.Security.AccessControl.AccessControlType]::Allow 
-        $grp = New-Object System.Security.Principal.NTAccount("F9VS\$g")
-        $ace = New-Object -TypeName System.Security.AccessControl.FileSystemAccessRule  -ArgumentList ($grp,$perm,$inh,$prop,$allow)
         $fol = Get-Acl
-        $fol.AddAccessRule($ace)
-        Write-Debug "`$ACE : $ace"
+
+        $permSet.permissions = [System.Security.AccessControl.FileSystemRights]"Read, Write, traverse, delete"
+        $permSet.propagation = [System.Security.AccessControl.PropagationFlags]::InheritOnly
+        $permSet.group = New-Object System.Security.Principal.NTAccount("F9VS\$g")
+        
+        $sba.Invoke()
+
         $grp = New-Object System.Security.Principal.NTAccount("F9VS\$($dept.name)")
         $perm = [System.Security.AccessControl.FileSystemRights]"Read, Traverse"
         $prop = [System.Security.AccessControl.PropagationFlags]::None
-        $ace = New-Object -TypeName System.Security.AccessControl.FileSystemAccessRule  -ArgumentList ($grp,$perm,$inh,$prop,$allow)
-        $fol.AddAccessRule($ace)
-        Write-Debug "`$ACE : $ace"
+
+        $sba.Invoke()
+
+        
         If (-not($audit))
             {
                 Write-Verbose "Setting Audit permissions"
                 $grp = New-Object System.Security.Principal.NTAccount("F9VS\Temp_Audit")
                 $perm = [System.Security.AccessControl.FileSystemRights]"Read, Traverse"
                 $prop = [System.Security.AccessControl.PropagationFlags]::None
-                $ace = New-Object -TypeName System.Security.AccessControl.FileSystemAccessRule  -ArgumentList ($grp,$perm,$inh,$prop,$allow)
-                $fol.AddAccessRule($ace)
-                Write-Debug "`$ACE : $ace"
+                
+                $sba.Invoke()
             }
+        ## Repeat B
+        $ACEStore.Add((Get-Location).path,$fol)
         set-acl -Path (Get-Location) -AclObject $fol
+        ##
         #endregion TeamRootPermissions
 
         New-Item -ItemType Directory -Path Shared
 
         #region TeamSharePermissions
+        $fol = Get-Acl -Path .\Shared ### If we push and reset the path at every folder we could reduce all unique occurences of this command
+
         $perm = [System.Security.AccessControl.FileSystemRights]"Read, Write, traverse, delete"
         $inh = [System.Security.AccessControl.InheritanceFlags]::None
         $prop = [System.Security.AccessControl.PropagationFlags]::InheritOnly
         $allow = [System.Security.AccessControl.AccessControlType]::Allow 
         $grp = New-Object System.Security.Principal.NTAccount("F9VS\$g")
         $ace = New-Object -TypeName System.Security.AccessControl.FileSystemAccessRule  -ArgumentList ($grp,$perm,$inh,$prop,$allow)
-        $fol = Get-Acl -Path .\Shared
+        
         $fol.AddAccessRule($ace)
         $grp = New-Object System.Security.Principal.NTAccount("F9VS\$($dept.name)")
         $perm = [System.Security.AccessControl.FileSystemRights]"Read, Traverse"
