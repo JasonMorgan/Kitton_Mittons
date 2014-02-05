@@ -59,7 +59,8 @@ $sb = {
 #endregion ScriptBlocks
 
 #region DefineRoot
-##
+
+## repeat A
 Write-Verbose "Create Access Control Entry"
 $ace = $sb.Invoke()
 $fol = Get-Acl
@@ -67,47 +68,70 @@ Write-Verbose "Add ACE to ACL"
 $fol.AddAccessRule($ace)
 Write-Debug "`$ACE : $($ace.IdentityReference)"
 ##
-Write-Verbose "Modify permissions"
+
+Write-Verbose "Modify permissions for $(Get-Location)"
 $permSet.permissions = [System.Security.AccessControl.FileSystemRights]"Read, Traverse"
 $permSet.propagation = [System.Security.AccessControl.PropagationFlags]::None
 $permSet.group = New-Object System.Security.Principal.NTAccount('F9VS\Temp_All')
+
+## repeat A
 Write-Verbose "Create Access Control Entry"
 $ace = $sb.Invoke()
 $fol.AddAccessRule($ace)
 Write-Debug "`$ACE : $($ace.IdentityReference)"
+##
+
+##Repeat B
 $ACEStore.Add((Get-Location).path,$fol)
 set-acl -Path (Get-Location) -AclObject $fol
+##
 
 #endregion DefineRoot
 
 #region DefineOpen
-##
+
 New-item -ItemType directory -Path "$($dept.Name)_Open" | Set-Location
 Write-Debug "Current path: $(get-location)"
+Write-Verbose "Modify permissions for $(Get-Location)"
 $permSet.permissions = [System.Security.AccessControl.FileSystemRights]"Read, Write, traverse, delete"
 $permSet.propagation = [System.Security.AccessControl.PropagationFlags]::InheritOnly
 $permSet.group = New-Object System.Security.Principal.NTAccount('F9VS\Temp_Finance')
-##
+
+##Repeat C
+$fol = Get-Acl
+
+## repeat A
 Write-Verbose "Create Access Control Entry"
 $ace = $sb.Invoke()
-$fol = Get-Acl
 Write-Verbose "Add ACE to ACL"
 $fol.AddAccessRule($ace)
 Write-Debug "`$ACE : $($ace.IdentityReference)"
+##
 
-$perm = [System.Security.AccessControl.FileSystemRights]"Read, Traverse"
-$prop = [System.Security.AccessControl.PropagationFlags]::None
-$grp = New-Object System.Security.Principal.NTAccount('F9VS\Temp_All')
-$ace = New-Object -TypeName System.Security.AccessControl.FileSystemAccessRule  -ArgumentList ($grp,$perm,$inh,$prop,$allow)
-Write-Debug "`$ACE : $ace"
+$permSet.permissions = [System.Security.AccessControl.FileSystemRights]"Read, Traverse"
+$permSet.propagation = [System.Security.AccessControl.PropagationFlags]::None
+$permSet.group = New-Object System.Security.Principal.NTAccount('F9VS\Temp_All')
+
+## repeat A
+Write-Verbose "Create Access Control Entry"
+$ace = $sb.Invoke()
+Write-Verbose "Add ACE to ACL"
 $fol.AddAccessRule($ace)
+Write-Debug "`$ACE : $($ace.IdentityReference)"
+##
+
+## Repeat B
+$ACEStore.Add((Get-Location).path,$fol)
 set-acl -Path (Get-Location) -AclObject $fol
+##
+
 #endregion DefineOpen
 
 
 
 Foreach ($g in ($dept.Members | foreach {$_.split(',')[0].trimstart('CN=')}))
     {
+        Write-Verbose "Test for Audit"
         $audit = ($g -like "Audit*")
         Write-Verbose "Set path to dept root"
         Set-Location -Path (Split-Path -Path (Get-Location))
