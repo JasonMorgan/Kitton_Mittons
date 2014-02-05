@@ -134,48 +134,47 @@ Foreach ($g in ($dept.Members | foreach {$_.split(',')[0].trimstart('CN=')}))
         Write-Debug "Current path: $(get-location)"
         Write-Verbose "Create team root"
         New-Item -ItemType directory -Path $g | Set-Location
+        $fol = Get-Acl
         Write-Debug "Current path: $(get-location)"
 
-
-
         #region TeamRootPermissions
-        $fol = Get-Acl
-
+        Write-Verbose "Modify permissions for $(Get-Location)"
         $permSet.permissions = [System.Security.AccessControl.FileSystemRights]"Read, Write, traverse, delete"
         $permSet.propagation = [System.Security.AccessControl.PropagationFlags]::InheritOnly
         $permSet.group = New-Object System.Security.Principal.NTAccount("F9VS\$g")
         
         $sba.Invoke()
-
+        Write-Verbose "Modify permissions for $(Get-Location)"
         $permSet.group = New-Object System.Security.Principal.NTAccount("F9VS\$($dept.name)")
         $permSet.permissions= [System.Security.AccessControl.FileSystemRights]"Read, Traverse"
 
         $sba.Invoke()
 
         
-        If (-not($audit)) {$addAudit.Invoke()}
+        If ($audit) {$addAudit.Invoke()}
         ## Repeat B
         $ACEStore.Add((Get-Location).path,$fol)
         set-acl -Path (Get-Location) -AclObject $fol
         ##
         #endregion TeamRootPermissions
 
-        New-Item -ItemType Directory -Path Shared
-
+        New-Item -ItemType Directory -Path Shared | Set-Location
+        $fol = Get-Acl
+        Write-Debug "Current path: $(get-location)"
         #region TeamSharePermissions
-        $fol = Get-Acl -Path .\Shared ### If we push and reset the path at every folder we could reduce all unique occurences of this command
-
+        
+        Write-Verbose "Modify permissions for $(Get-Location)"
         $permSet.permissions = [System.Security.AccessControl.FileSystemRights]"Read, Write, traverse, delete"
         $permSet.group = New-Object System.Security.Principal.NTAccount("F9VS\$g")
 
         $sba.Invoke()
-        
+        Write-Verbose "Modify permissions for $(Get-Location)"
         $permSet.group = New-Object System.Security.Principal.NTAccount("F9VS\$($dept.name)")
         $permSet.permissions = [System.Security.AccessControl.FileSystemRights]"Read, Traverse"
         
         $sba.Invoke()
         
-        If (-not($audit)) {$addAudit.Invoke()}
+        If ($audit) {$addAudit.Invoke()}
 
         ## Repeat B
         $ACEStore.Add((Get-Location).path,$fol)
@@ -183,35 +182,45 @@ Foreach ($g in ($dept.Members | foreach {$_.split(',')[0].trimstart('CN=')}))
         ##
         #endregion TeamSharePermissions
 
-        New-Item -ItemType Directory -Path Private
+        Write-Verbose "Set path to team root"
+        Set-Location -Path (Split-Path -Path (Get-Location))
+        
+
+        New-Item -ItemType Directory -Path Private | Set-Location
+        $fol = Get-Acl
+        Write-Debug "Current path: $(get-location)"
+
         #region PrivatePermissions
-        $perm = [System.Security.AccessControl.FileSystemRights]"Read, Write, traverse, delete"
-        $inh = [System.Security.AccessControl.InheritanceFlags]::None
-        $prop = [System.Security.AccessControl.PropagationFlags]::InheritOnly
-        $allow = [System.Security.AccessControl.AccessControlType]::Allow 
-        $grp = New-Object System.Security.Principal.NTAccount("F9VS\$g")
-        $ace = New-Object -TypeName System.Security.AccessControl.FileSystemAccessRule  -ArgumentList ($grp,$perm,$inh,$prop,$allow)
-        $fol = Get-Acl -Path .\Private
-        $fol.AddAccessRule($ace)
-        If (-not($audit)) {$addAudit.Invoke()}
+        
+        Write-Verbose "Modify permissions for $(Get-Location)"
+        $permSet.permissions = [System.Security.AccessControl.FileSystemRights]"Read, Write, traverse, delete"
+        $permSet.propagation = [System.Security.AccessControl.PropagationFlags]::InheritOnly
+        $permSet.group = New-Object System.Security.Principal.NTAccount("F9VS\$g")
+
+        $sba.Invoke()
+        If ($audit) {$addAudit.Invoke()}
         ## Repeat B
         $ACEStore.Add((Get-Location).path,$fol)
         set-acl -Path (Get-Location) -AclObject $fol
         ##
         #endregion PrivatePermissions
 
-        New-Item -ItemType Directory -Path Lead
+        Write-Verbose "Set path to team root"
+        Set-Location -Path (Split-Path -Path (Get-Location))
+
+        New-Item -ItemType Directory -Path Lead | Set-Location
+        $fol = Get-Acl
+        Write-Debug "Current path: $(get-location)"
 
         #region Permissions
-        $perm = [System.Security.AccessControl.FileSystemRights]"Read, Write, traverse, delete"
-        $inh = [System.Security.AccessControl.InheritanceFlags]::None
-        $prop = [System.Security.AccessControl.PropagationFlags]::InheritOnly
-        $allow = [System.Security.AccessControl.AccessControlType]::Allow 
-        $grp = New-Object System.Security.Principal.NTAccount("F9VS\$g" + "_Lead")
-        $ace = New-Object -TypeName System.Security.AccessControl.FileSystemAccessRule  -ArgumentList ($grp,$perm,$inh,$prop,$allow)
-        $fol = Get-Acl -Path .\Lead
-        $fol.AddAccessRule($ace)
-        If (-not($audit)) {$addAudit.Invoke()}
+        Write-Verbose "Modify permissions for $(Get-Location)"
+        $permSet.permissions = [System.Security.AccessControl.FileSystemRights]"Read, Write, traverse, delete"
+        $permSet.propagation = [System.Security.AccessControl.PropagationFlags]::InheritOnly
+        $permSet.group = New-Object System.Security.Principal.NTAccount("F9VS\$g" + "_Lead")
+
+        $sba.Invoke()
+        If ($audit) {$addAudit.Invoke()}
+
         ## Repeat B
         $ACEStore.Add((Get-Location).path,$fol)
         set-acl -Path (Get-Location) -AclObject $fol
