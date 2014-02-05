@@ -20,29 +20,60 @@ Audit permissions with an HTML report
 
 [cmdletbinding()]
 Param (
-        $ADGroupName = 'Temp_finance'
+        $Identity = 'Temp_finance',
+        $Path = "\\Server\Share",
+        $StorePath = "\\Server\Share"
+
     )
 
-$dept = Get-ADGroup -Identity $ADGroupName -Properties Members
-new-item -ItemType directory -Path $dept.Name | set-location
+$dept = Get-ADGroup -Identity $Identity -Properties Members
+new-item -ItemType directory -Path $path\$dept.Name | set-location
 Write-Debug "Current path: $(get-location)"
+
+#region CommonVariables
+
+$AceStore =@{}
+
+$permSet = @{
+        permissions = [System.Security.AccessControl.FileSystemRights]"Read, Write, Traverse"
+        inheritance = [System.Security.AccessControl.InheritanceFlags]::None
+        propagation = [System.Security.AccessControl.PropagationFlags]::InheritOnly
+        allow = [System.Security.AccessControl.AccessControlType]::Allow 
+        group = New-Object System.Security.Principal.NTAccount('F9VS\Temp_Finance')
+    }
+
+#endregion CommonVariables
+
+#region ScriptBlocks
+
+$sb = {
+        New-Object -TypeName System.Security.AccessControl.FileSystemAccessRule  -ArgumentList (
+            $permSet.group,
+            $permSet.permissions,
+            $permSet.inheritance,
+            $permSet.propagation,
+            $permSet.allow
+        )
+    }
+
+
+#endregion ScriptBlocks
+
 #region DefineRoot
-$perm = [System.Security.AccessControl.FileSystemRights]"Read, Write, Traverse"
-$inh = [System.Security.AccessControl.InheritanceFlags]::None
-$prop = [System.Security.AccessControl.PropagationFlags]::InheritOnly
-$allow = [System.Security.AccessControl.AccessControlType]::Allow 
-$grp = New-Object System.Security.Principal.NTAccount('F9VS\Temp_Finance')
-$ace = New-Object -TypeName System.Security.AccessControl.FileSystemAccessRule  -ArgumentList ($grp,$perm,$inh,$prop,$allow)
+
+$ace = $sb.Invoke()
 $fol = Get-Acl
 Write-Debug "`$ACE : $($ace.IdentityReference)"
 $fol.AddAccessRule($ace)
-$perm = [System.Security.AccessControl.FileSystemRights]"Read, Traverse"
-$prop = [System.Security.AccessControl.PropagationFlags]::None
-$grp = New-Object System.Security.Principal.NTAccount('F9VS\Temp_All')
-$ace = New-Object -TypeName System.Security.AccessControl.FileSystemAccessRule  -ArgumentList ($grp,$perm,$inh,$prop,$allow)
+$permSet.permissions = [System.Security.AccessControl.FileSystemRights]"Read, Traverse"
+$permSet.propagation = [System.Security.AccessControl.PropagationFlags]::None
+$permSet.group = New-Object System.Security.Principal.NTAccount('F9VS\Temp_All')
+$ace = $sb.Invoke()
 Write-Debug "`$ACE : $($ace.IdentityReference)"
 $fol.AddAccessRule($ace)
 set-acl -Path (Get-Location) -AclObject $fol
+$AceStore.Add()
+
 #endregion DefineRoot
 
 New-item -ItemType directory -Path "$($dept.Name)_Open" | Set-Location
