@@ -22,8 +22,8 @@ Audit permissions with an HTML report
 Param (
         $Identity = 'Temp_finance',
         $Path = "\\Server\Share",
-        $StorePath = "\\Server\Share"
-
+        $StorePath = "\\Server\Share",
+        $Domain = "F9VS"
     )
 
 $dept = Get-ADGroup -Identity $Identity -Properties Members

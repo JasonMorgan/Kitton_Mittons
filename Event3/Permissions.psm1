@@ -66,7 +66,7 @@ Param
         $ACE,
         
         # Specifiy rule type
-        [alidateSet("Audit","Access")]
+        [ValidateSet("Audit","Access")]
         $Type,
         
         #
