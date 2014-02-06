@@ -41,9 +41,9 @@ else {
         $type = [System.Security.AccessControl.AccessControlType]::Allow
     }
 
-$perm = [System.Security.AccessControl.FileSystemRights]"$permission"
-$inh = [System.Security.AccessControl.InheritanceFlags]"$inheritance" 
-$Prop = [System.Security.AccessControl.PropagationFlags]"$Propagation"   
+$perm = [System.Security.AccessControl.FileSystemRights]$permission
+$inh = [System.Security.AccessControl.InheritanceFlags]$inheritance
+$Prop = [System.Security.AccessControl.PropagationFlags]$Propagation
 $Principal = New-Object System.Security.Principal.NTAccount($Identity)
 New-Object -TypeName System.Security.AccessControl.FileSystemAccessRule  -ArgumentList (
         $Principal,
