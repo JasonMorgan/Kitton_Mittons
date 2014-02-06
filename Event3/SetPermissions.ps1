@@ -27,37 +27,27 @@ Param (
     )
 
 $dept = Get-ADGroup -Identity $Identity -Properties Members
-new-item -ItemType directory -Path $path\$dept.Name | set-location
+new-item -ItemType directory -Path $path\$($dept.Name) | set-location
 Write-Debug "Current path: $(get-location)"
 
 #region CommonVariables
 $ACEStore = @{}
 
 $permSet = @{
-        permissions = [System.Security.AccessControl.FileSystemRights]"Read, Write, Traverse"
-        inheritance = [System.Security.AccessControl.InheritanceFlags]::ObjectInherit,[System.Security.AccessControl.InheritanceFlags]::ContainerInherit
-        propagation = [System.Security.AccessControl.PropagationFlags]::None
-        allow = [System.Security.AccessControl.AccessControlType]::Allow 
-        group = New-Object System.Security.Principal.NTAccount('F9VS\Temp_Finance')
+        permissions = "ReadAndExecute"
+        inheritance = "None"
+        propagation = "none"
+        group = 'F9VS\Temp_Finance'
     }
 
 #endregion CommonVariables
 
 #region ScriptBlocks
-
-$sb = {
-        New-Object -TypeName System.Security.AccessControl.FileSystemAccessRule  -ArgumentList (
-            $permSet.group,
-            $permSet.permissions,
-            $permSet.inheritance,
-            $permSet.propagation,
-            $permSet.allow
-        )
-    }
+    
 $sba = {
         ## repeat A
         Write-Verbose "Create Access Control Entry"
-        $ace = $sb.Invoke()
+        $ace = New-ACE -Identity $permSet.group -permission $permSet.permissions -inheritance $permSet.inheritance -Propagation $permSet.propagation 
         Write-Verbose "Add ACE to ACL"
         $fol.AddAccessRule($ace)
         Write-Debug "`$ACE : $($ace.IdentityReference)"
@@ -66,9 +56,11 @@ $sba = {
 
 $addAudit = {
         Write-Verbose "Setting Audit permissions"
-        $permSet.group = New-Object System.Security.Principal.NTAccount("F9VS\Temp_Audit")
-        $permSet.permissions = [System.Security.AccessControl.FileSystemRights]"Read, Traverse"
-        $sba.Invoke()
+        $permSet.group = "F9VS\Temp_Audit"
+        $permSet.permissions = "ReadandExecute" 
+        $permSet.inheritance = "ContainerInherit","ObjectInherit"
+        $ace = New-ACE -Identity $permSet.group -permission $permSet.permissions -inheritance $permSet.inheritance -Propagation $permSet.propagation
+        $fol.AddAccessRule($ace) 
     }
 
 #endregion ScriptBlocks
@@ -82,9 +74,9 @@ $fol = Get-Acl
 $sba.Invoke()
 
 Write-Verbose "Modify permissions for $(Get-Location)"
-$permSet.permissions = [System.Security.AccessControl.FileSystemRights]"Read, Traverse"
-$permSet.propagation = [System.Security.AccessControl.PropagationFlags]::None
-$permSet.group = New-Object System.Security.Principal.NTAccount('F9VS\Temp_All')
+$permSet.permissions = "ReadandExecute"
+$permSet.propagation = "None"
+$permSet.group = 'F9VS\Temp_All'
 
 $sba.Invoke()
 
@@ -100,9 +92,10 @@ set-acl -Path (Get-Location) -AclObject $fol
 New-item -ItemType directory -Path "$($dept.Name)_Open" | Set-Location
 Write-Debug "Current path: $(get-location)"
 Write-Verbose "Modify permissions for $(Get-Location)"
-$permSet.permissions = [System.Security.AccessControl.FileSystemRights]"Read, Write, traverse, delete"
-$permSet.propagation = [System.Security.AccessControl.PropagationFlags]::InheritOnly
-$permSet.group = New-Object System.Security.Principal.NTAccount('F9VS\Temp_Finance')
+$permSet.permissions = "Modify"
+$permSet.propagation = "none"
+$permSet.inheritance = "none"
+$permSet.group = 'F9VS\Temp_Finance'
 
 ##Repeat C
 $fol = Get-Acl
@@ -110,9 +103,8 @@ $fol = Get-Acl
 $sba.Invoke()
 
 Write-Verbose "Modify permissions for $(Get-Location)"
-$permSet.permissions = [System.Security.AccessControl.FileSystemRights]"Read, Traverse"
-$permSet.propagation = [System.Security.AccessControl.PropagationFlags]::None
-$permSet.group = New-Object System.Security.Principal.NTAccount('F9VS\Temp_All')
+$permSet.permissions = "ReadandExecute"
+$permSet.group = 'F9VS\Temp_All'
 
 $sba.Invoke()
 
@@ -139,17 +131,17 @@ Foreach ($g in ($dept.Members | foreach {$_.split(',')[0].trimstart('CN=')}))
 
         #region TeamRootPermissions
         Write-Verbose "Modify permissions for $(Get-Location)"
-        $permSet.permissions = [System.Security.AccessControl.FileSystemRights]"Read, Write, traverse, delete"
-        $permSet.propagation = [System.Security.AccessControl.PropagationFlags]::InheritOnly
-        $permSet.group = New-Object System.Security.Principal.NTAccount("F9VS\$g")
+        $permSet.permissions = "Modify"
+        $permSet.propagation = "None"
+        $permSet.inheritance = "None"
+        $permSet.group = "F9VS\$g"
         
         $sba.Invoke()
         Write-Verbose "Modify permissions for $(Get-Location)"
-        $permSet.group = New-Object System.Security.Principal.NTAccount("F9VS\$($dept.name)")
-        $permSet.permissions= [System.Security.AccessControl.FileSystemRights]"Read, Traverse"
+        $permSet.group = "F9VS\$($dept.name)"
+        $permSet.permissions= "ReadAndExecute"
 
         $sba.Invoke()
-
         
         If (-not ($audit)) {$addAudit.Invoke()}
         ## Repeat B
@@ -164,17 +156,19 @@ Foreach ($g in ($dept.Members | foreach {$_.split(',')[0].trimstart('CN=')}))
         #region TeamSharePermissions
         
         Write-Verbose "Modify permissions for $(Get-Location)"
-        $permSet.permissions = [System.Security.AccessControl.FileSystemRights]"Read, Write, traverse, delete"
-        $permSet.group = New-Object System.Security.Principal.NTAccount("F9VS\$g")
+        $permSet.permissions = "Modify"
+        $permSet.group = "F9VS\$g"
+        $permSet.inheritance = "ContainerInherit","ObjectInherit"
 
         $sba.Invoke()
         Write-Verbose "Modify permissions for $(Get-Location)"
-        $permSet.group = New-Object System.Security.Principal.NTAccount("F9VS\$($dept.name)")
-        $permSet.permissions = [System.Security.AccessControl.FileSystemRights]"Read, Traverse"
+        $permSet.group = "F9VS\$($dept.name)"
+        $permSet.permissions = "ReadAndExecute"
+        $permSet.inheritance = "ContainerInherit","ObjectInherit"
         
         $sba.Invoke()
         
-        If (-not ($audit)) {$addAudit.Invoke()}
+       # If (-not ($audit)) {$addAudit.Invoke()}
 
         ## Repeat B
         $ACEStore.Add((Get-Location).path,$fol)
@@ -193,12 +187,12 @@ Foreach ($g in ($dept.Members | foreach {$_.split(',')[0].trimstart('CN=')}))
         #region PrivatePermissions
         
         Write-Verbose "Modify permissions for $(Get-Location)"
-        $permSet.permissions = [System.Security.AccessControl.FileSystemRights]"Read, Write, traverse, delete"
-        $permSet.propagation = [System.Security.AccessControl.PropagationFlags]::InheritOnly
-        $permSet.group = New-Object System.Security.Principal.NTAccount("F9VS\$g")
+        $permSet.permissions = "Modify"
+        $permSet.inheritance = "ContainerInherit","ObjectInherit"
+        $permSet.group = "F9VS\$g"
 
         $sba.Invoke()
-        If (-not ($audit)) {$addAudit.Invoke()}
+       # If (-not ($audit)) {$addAudit.Invoke()}
         ## Repeat B
         $ACEStore.Add((Get-Location).path,$fol)
         set-acl -Path (Get-Location) -AclObject $fol
@@ -214,18 +208,21 @@ Foreach ($g in ($dept.Members | foreach {$_.split(',')[0].trimstart('CN=')}))
 
         #region Permissions
         Write-Verbose "Modify permissions for $(Get-Location)"
-        $permSet.permissions = [System.Security.AccessControl.FileSystemRights]"Read, Write, traverse, delete"
-        $permSet.propagation = [System.Security.AccessControl.PropagationFlags]::InheritOnly
-        $permSet.group = New-Object System.Security.Principal.NTAccount("F9VS\$g" + "_Lead")
+        $permSet.permissions = "Modify"
+        $permSet.inheritance = "ContainerInherit","ObjectInherit"
+        $permSet.group = "F9VS\$g" + "_Lead"
 
         $sba.Invoke()
-        If (-not ($audit)) {$addAudit.Invoke()}
+       # If (-not ($audit)) {$addAudit.Invoke()}
 
         ## Repeat B
         $ACEStore.Add((Get-Location).path,$fol)
         set-acl -Path (Get-Location) -AclObject $fol
         ##
         #endregion Permissions
-    }
 
+        Write-Verbose "Set path to team root"
+        Set-Location -Path (Split-Path -Path (Get-Location))
+    }
+$ACEStore | Export-Clixml -Path $StorePath
 
