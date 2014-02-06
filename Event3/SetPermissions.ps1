@@ -35,8 +35,8 @@ $ACEStore = @{}
 
 $permSet = @{
         permissions = [System.Security.AccessControl.FileSystemRights]"Read, Write, Traverse"
-        inheritance = [System.Security.AccessControl.InheritanceFlags]::None
-        propagation = [System.Security.AccessControl.PropagationFlags]::InheritOnly
+        inheritance = [System.Security.AccessControl.InheritanceFlags]::ObjectInherit,[System.Security.AccessControl.InheritanceFlags]::ContainerInherit
+        propagation = [System.Security.AccessControl.PropagationFlags]::None
         allow = [System.Security.AccessControl.AccessControlType]::Allow 
         group = New-Object System.Security.Principal.NTAccount('F9VS\Temp_Finance')
     }
@@ -151,7 +151,7 @@ Foreach ($g in ($dept.Members | foreach {$_.split(',')[0].trimstart('CN=')}))
         $sba.Invoke()
 
         
-        If ($audit) {$addAudit.Invoke()}
+        If (-not ($audit)) {$addAudit.Invoke()}
         ## Repeat B
         $ACEStore.Add((Get-Location).path,$fol)
         set-acl -Path (Get-Location) -AclObject $fol
@@ -174,7 +174,7 @@ Foreach ($g in ($dept.Members | foreach {$_.split(',')[0].trimstart('CN=')}))
         
         $sba.Invoke()
         
-        If ($audit) {$addAudit.Invoke()}
+        If (-not ($audit)) {$addAudit.Invoke()}
 
         ## Repeat B
         $ACEStore.Add((Get-Location).path,$fol)
@@ -198,7 +198,7 @@ Foreach ($g in ($dept.Members | foreach {$_.split(',')[0].trimstart('CN=')}))
         $permSet.group = New-Object System.Security.Principal.NTAccount("F9VS\$g")
 
         $sba.Invoke()
-        If ($audit) {$addAudit.Invoke()}
+        If (-not ($audit)) {$addAudit.Invoke()}
         ## Repeat B
         $ACEStore.Add((Get-Location).path,$fol)
         set-acl -Path (Get-Location) -AclObject $fol
@@ -219,7 +219,7 @@ Foreach ($g in ($dept.Members | foreach {$_.split(',')[0].trimstart('CN=')}))
         $permSet.group = New-Object System.Security.Principal.NTAccount("F9VS\$g" + "_Lead")
 
         $sba.Invoke()
-        If ($audit) {$addAudit.Invoke()}
+        If (-not ($audit)) {$addAudit.Invoke()}
 
         ## Repeat B
         $ACEStore.Add((Get-Location).path,$fol)
