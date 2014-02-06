@@ -60,7 +60,7 @@ Function Add-Rule
 Param
     (
         #
-        $ACL,
+        $ACLObject,
         
         #
         $ACE,
@@ -80,8 +80,41 @@ switch ($Type)
 If ($passthru) {$ACL}
 }
 
-Function Audit-Folder
+Function Test-FolderPermission
 {
-<##>
+<#
 
+#>
+Param
+    (
+        # Enter path to target folder
+        [validateScript({Test-Path -Path $_ -PathType Container})]
+        [string]$Path,
+
+        # Specify a valid ACL object
+        [System.Security.AccessControl.DirectorySecurity]$ACLObject,
+        
+        # Set if you want the function to reaply the orginal permissions
+        [Switch]$Remediate
+    )
+
+#region Open
+try {$Current = Get-Acl -Path $Path}
+Catch {Throw "Unable to read ACL for $Path"}
+#endregion Open
+
+#region Compare
+if (Compare-Object -ReferenceObject $ACLObject -DifferenceObject $Current -Property access)
+    {
+        if ($Remediate)
+            {
+                Try {Set-Acl -Path $Path -AclObject $ACLObject} catch {Write-Error "Unable to set permissions on $path"}
+            }
+        else
+            {
+                $false    
+            }
+    }
+Else {$true}
+#endregion Compare
 }
