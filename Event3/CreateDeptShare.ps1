@@ -4,8 +4,8 @@ This script accepts a department name and folder path, and will create a departm
 
 .DESCRIPTION
 This script requires a domain name, identity of a department group, a root path for the share, and a store path for the permissions history,
-Permissions are stored as a hash table object in an xml file with the folder paths stored as the key values and the ACLs stored as the values
-for each key, and the ACEs stored in the .  This file is saved in the specified store path. 
+Permissions are stored as a hash table object in an xml file with the folder paths stored as the key and the ACLs stored as the value, and 
+the ACEs stored in the .  This file is saved in the specified store path. 
 
 .EXAMPLE
 C:\powershell\scripts\CreateDeptShare.ps1 
@@ -20,10 +20,9 @@ Creates the Marketing department folder structure in the Contoso share on the Fi
 The Audit group in this case is named Contoso_Audit. 
 
 .EXAMPLE
-get-content .\Groups.txt | C:\powershell\scripts\CreateDeptShare.ps1
+get-content .\Groups.txt | Foreach { C:\powershell\scripts\CreateDeptShare.ps1 -path \\server\Share\ -identity $_ -domain Contoso.com -storepath c:\perms }
 
-
-
+Creates a Debt folder structure for each dept listed in the Groups.txt file
 
 .NOTES
 Written by the Kitton Mittons
@@ -32,15 +31,31 @@ Version 1.1
 Created on: 2/6/2014
 Last Modified: 2/7/2014
 
+#requires -version 3.0 
+#requires -Modules @{Name='ActiveDirectory';ModuleVersion=1.0.0.0}
+
 #>
 
 [cmdletbinding()]
 Param (
-        $Identity = 'Temp_finance',
-        $Path = "\\Server\Share",
-        $StorePath = "\\Server\Share",
-        $Domain = "F9VS",
-        $AuditGroup = "Temp_Audit"
+        # Enter the Group name for the target Dept
+        [ValidateScript({ if (-not(Get-ADGroup -Identity $_)) {Throw "$_ is not a valid group name"} })]
+        [string]$Identity = 'Temp_finance',
+        
+        # Enter the path to the target shared folder
+        [ValidateScript({ Test-Path -Path $_ -PathType container })]
+        [string]$Path = "\\Server\Share",
+        
+        # Enter the path to where you want the Permissions data stored
+        [ValidateScript({ Test-Path -Path $_ -PathType container })]
+        [string]$StorePath = "\\Server\Share",
+        
+        # Enter the Domain name
+        [string]$Domain = "CONTOSO",
+        
+        # Enter the name of the Auditor group
+        [ValidateScript({ if (-not(Get-ADGroup -Identity $_)) {Throw "$_ is not a valid group name"} })]
+        [string]$AuditGroup = "Temp_Audit"
     )
 
 Import-Module Permissions
@@ -54,7 +69,8 @@ $IsAudit = {
             $param.permission = "ReadAndExecute"
             $param.inheritance = "ContainerInherit","ObjectInherit"
             $ACE = New-ACE @param
-            Add-Rule -ACL $ACL -ACE $ACE -Type Access   
+            Try {Add-Rule -ACL $ACL -ACE $ACE -Type Access}
+            Catch {Throw "Unable to add Audit to ACL"}
         }
   }
 #endregion ScriptBlocks
