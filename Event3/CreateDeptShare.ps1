@@ -1,20 +1,36 @@
 ﻿<#
-Create folders
-Set permissions
-Store permissions as set
-    Store with datetime in filename
-Audit permissions with an HTML report
-    Able to restore permissions on modded folders
+.SYNOPSIS
+This script accepts a department name and folder path, and will create a department shared folder structure at a given location. 
+
+.DESCRIPTION
+This script requires a domain name, identity of a department group, a root path for the share, and a store path for the permissions history,
+Permissions are stored as a hash table object in an xml file with the folder paths stored as the key values and the ACLs stored as the values
+for each key, and the ACEs stored in the .  This file is saved in the specified store path. 
+
+.EXAMPLE
+C:\powershell\scripts\CreateDeptShare.ps1 
+
+Creates the default folder structure with the F9VS domain, Temp_Finance Department, \\Server\Share root folder, and the permissions
+history will be stored in the \\server\share folder. 
+
+.EXAMPLE
+C:\powershell\scripts\CreateDeptShare.ps1 -Identity Marketing -Path \\FileServer1\Contoso -StorePath \\FileServer1\PermissionLogs -Domain Contoso -AuditGroup Contoso_Audit
+
+Creates the Marketing department folder structure in the Contoso share on the FileServer1 server with the logs in a PermissionLogs folder on the same server.
+The Audit group in this case is named Contoso_Audit. 
+
+.EXAMPLE
+get-content .\Groups.txt | C:\powershell\scripts\CreateDeptShare.ps1
 
 
-1 access dept group
-2 List teams in group
-3 Make folder structure
-4 set permissions on folder structure
-5 store permission objects
-6 Audit Folder permissions
-7 Reset folder with drift
-8 HTML report
+
+
+.NOTES
+Written by the Kitton Mittons
+For the 2014 Winter Scripting Games
+Version 1.1
+Created on: 2/6/2014
+Last Modified: 2/7/2014
 
 #>
 

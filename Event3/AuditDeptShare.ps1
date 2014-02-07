@@ -1,9 +1,10 @@
 ﻿<#
 .SYNOPSIS
-
+This script audits the permissions on a given share against that share's stored permissions history
 
 .DESCRIPTION
-
+This script accepts a stored permssions history object and audits the folder structure against that history.  This script can provide an html report 
+displaying any variance, outputs variance objects into the pipeline, and optionally remediates any variances found during the audit. 
 
 .EXAMPLE
 C:\powershell\Scripts\AuditDeptShare.ps1 -permissionsXML F:\Temp\Temp_Finance.xml -remediate
@@ -15,8 +16,17 @@ C:\powershell\Scripts\AuditDeptShare.ps1 -permissionsXML F:\Temp\Temp_Finance.xm
 
 Audit settings and output them to an html report stored at c:\report.html
 
-.NOTES
+.EXAMPLE
+C:\powershell\Scripts\AuditDepthare.ps1 -permissionsXML F:\Temp\Temp_Finance.xml
 
+Audits settings and outputs any variance objects to the pipeline.  No output indicates there was no variance is the audit. 
+
+.NOTES
+Written by the Kitton Mittons
+For the 2014 Winter Scripting Games
+Version 1.1
+Created on: 2/6/2014
+Last Modified: 2/7/2014
 #>
 [cmdletbinding(DefaultParameterSetName="Default")]
 Param
