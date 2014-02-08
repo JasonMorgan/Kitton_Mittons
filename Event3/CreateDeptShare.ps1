@@ -159,18 +159,18 @@ foreach ($p in $paths)
             { 
               {$_.EndsWith('Lead')} 
                 {
-                  Write-Verbose "Create $($_.Split('\')[-2]) Lead Folder @ $_"
+                  Write-Verbose "Create $($_.Split('\')[-1].split('_')[0] ) Lead Folder @ $_"
                   New-Item -ItemType directory -Path $_ | Out-Null
                   $ACL = Get-Acl -Path $_
                   $param = @{
-                      Identity = "$Domain\$($_.Split('\')[-2] + "_Lead")"
+                      Identity = "$Domain\$(($_.Split('\')[-1].split('_')[0] ) + "_Lead")"
                       permission = "Modify"
                       inheritance = "ContainerInherit","ObjectInherit"
                       Propagation = "None"
                     }
                   $ACE = New-ACE @param
                   try {Add-Rule -ACLObject $ACL -ACE $ACE -Type Access}
-                  Catch {Throw "Unable to add Audit to ACL"}
+                  Catch {Throw "Unable to add ACE to ACL"}
                   & $IsAudit
                   $ACEStore.Add($_,$ACL)
                   Write-Debug "Folder to Modify $_"
@@ -180,23 +180,23 @@ foreach ($p in $paths)
                 } 
               {$_.EndsWith('Shared')} 
                 {
-                  Write-Verbose "Create $($_.Split('\')[-2]) Shared Folder @ $_"
+                  Write-Verbose "Create $($_.Split('\')[-1].split('_')[0] ) Shared Folder @ $_"
                   New-Item -ItemType directory -Path $_ | Out-Null
                   $ACL = Get-Acl -Path $_
                   $param = @{
-                      Identity = "$Domain\$($_.Split('\')[-2])"
+                      Identity = "$Domain\$($_.Split('\')[-1].split('_')[0] )"
                       permission = "Modify"
                       inheritance = "ContainerInherit","ObjectInherit"
                       Propagation = "None"
                     }
                   $ACE = New-ACE @param
                   try {Add-Rule -ACLObject $ACL -ACE $ACE -Type Access}
-                  Catch {Throw "Unable to add Audit to ACL"}
+                  Catch {Throw "Unable to add ACE to ACL"}
                   $param.Identity = "$Domain\$($dept.Name)"
                   $param.permission = "ReadAndExecute"
                   $ACE = New-ACE @param
                   Try {Add-Rule -ACLObject $ACL -ACE $ACE -Type Access}
-                  Catch {Throw "Unable to add Audit to ACL"}
+                  Catch {Throw "Unable to add ACE to ACL"}
                   & $IsAudit
                   $ACEStore.Add($_,$ACL)
                   Write-Debug "Folder to Modify $_"
@@ -206,18 +206,18 @@ foreach ($p in $paths)
                 } 
               {$_.EndsWith('Private')} 
                 {
-                  Write-Verbose "Create $($_.Split('\')[-2]) Private Folder @ $_"
+                  Write-Verbose "Create $($_.Split('\')[-1].split('_')[0] ) Private Folder @ $_"
                   New-Item -ItemType directory -Path $_ | Out-Null
                   $ACL = Get-Acl -Path $_
                   $param = @{
-                      Identity = "$Domain\$($_.Split('\')[-2])"
+                      Identity = "$Domain\$($_.Split('\')[-1].split('_')[0] )"
                       permission = "Modify"
                       inheritance = "ContainerInherit","ObjectInherit"
                       Propagation = "None"
                     }
                   $ACE = New-ACE @param
                   Try {Add-Rule -ACLObject $ACL -ACE $ACE -Type Access}
-                  Catch {Throw "Unable to add Audit to ACL"}
+                  Catch {Throw "Unable to add ACE to ACL"}
                   & $IsAudit
                   $ACEStore.Add($_,$ACL)
                   Write-Debug "Folder to Modify $_"
