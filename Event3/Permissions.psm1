@@ -11,6 +11,7 @@ Creates an ACE object that can be applied to an ACL
 New-Ace -Identity "$Domain\Accounting" -permission "Modify" -inheritance "ContainerInherit","ObjectInherit" -Propagation 'None'
  
 Creates an ACE object for the group Accounting with the Modify permission and Inheritance enabled
+
 .EXAMPLE
 New-Ace -Identity 'contoso\johnDoe' -permission "Read' -inheritance 'None' -Propagation 'none'
  
@@ -102,9 +103,10 @@ Adds the specified access rule to the Discrtionary Access control List (DACL) or
 Control List (SACL)
  
 .EXAMPLE
-Get-ACL \\server\share | Add-Rule -ACL $_ -ACE $ACE -Access
+$acl = Get-ACL \\server\share
+Add-Rule -ACL $acl -ACE $ACE -Access
  
-Adds the $ACE object to the SACL for \\server\share
+Adds the $ACE object to the ACL for \\server\share
  
  
 .NOTES
@@ -145,19 +147,32 @@ Function Test-FolderPermission
 {
 <#
 .SYNOPSIS
+Test permissions on a given folder
 
 .DESCRIPTION
+References a given ACL object and tests the permissions on a given folder to ensure the Permissions are correct.
+
+Able to remediate any varinces that are detected during a test.
 
 .EXAMPLE
+(Import-clixml .\FolderPermissions.xml).getenumerator() | foreach {$_ | test-FolderPermission -remediate $true}
+
+Tests all folder permissions in the folderPermissions.xml file and remediates any variances if required.
+This will produce a Boolean true for every folder audited.
 
 .EXAMPLE
+Test-Permission -path c:\folder -aclobject $badACL
+
+This will test the folder C:\Folder and return a boolean value indicating if the ACL, $BadACL, matches the ACL on the folder.
+
+Our Example would return false as $BadACL is not the correct ACL for that folder.
 
 .NOTES
 Written by the Kitton Mittons
 For the 2014 Winter Scripting Games
-Version 1.0
+Version 1.2
 Created on: 2/5/2014
-Last Modified: 2/5/2014
+Last Modified: 2/7/2014
 
 #>
 Param

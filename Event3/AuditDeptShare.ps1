@@ -19,7 +19,7 @@ Audit settings and output them to an html report stored at c:\report.html
 .EXAMPLE
 C:\powershell\Scripts\AuditDepthare.ps1 -permissionsXML F:\Temp\Temp_Finance.xml
 
-Audits settings and outputs any variance objects to the pipeline.  No output indicates there was no variance is the audit. 
+Audits settings and outputs any variance objects to the pipeline.  No output indicates there was no variance in the audit. 
 
 .NOTES
 Written by the Kitton Mittons
@@ -54,14 +54,16 @@ Import-Module Permissions
 $hash = Import-Clixml $permissionsXML
 $entries = foreach ($e in $hash.GetEnumerator())
   {
-    if (-not ($e | Test-FolderPermission -Remediate $remediate))
-        {
-          [pscustomobject]@{
-              Path = $e.key
-              RightACL = $e.value.access
-              ACL = (Get-Acl -Path $e.key).Access
-            }
-        }
+    Get-ChildItem -Path $e -Recurse -Directory | foreach {
+        if (-not (Test-FolderPermission -Path $_.FullName -ACLObject $e.value -Remediate $remediate))
+          {
+            [pscustomobject]@{
+                Path = $e.key
+                RightACL = $e.value.access
+                ACL = (Get-Acl -Path $e.key).Access
+              }
+          }
+      }
   }
 
 switch ($PSCmdlet.ParameterSetName)
@@ -100,6 +102,16 @@ ConvertTo-Html -Fragment -As list )
 </head><body>
 <h3>The following folders were audited and no variances have been found</h3>
 $($hash.Keys)
+<h3>Permissions</h3>
+$($hash.GetEnumerator() | foreach {
+    $(@"
+<h4>$($_.key)</h4>
+$($_.value.access | foreach {$_ | ConvertTo-Html -Fragment -as list } | out-string )
+"@
+)
+  }
+
+)
 </body></html>
 "@
           }

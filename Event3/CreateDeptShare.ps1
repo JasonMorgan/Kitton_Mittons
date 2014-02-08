@@ -10,14 +10,14 @@ the ACEs stored in the .  This file is saved in the specified store path.
 .EXAMPLE
 C:\powershell\scripts\CreateDeptShare.ps1 
 
-Creates the default folder structure with the F9VS domain, Temp_Finance Department, \\Server\Share root folder, and the permissions
+Creates the default folder structure with the CONTOSO domain, Temp_Finance Department, \\Server\Share root folder, and the permissions
 history will be stored in the \\server\share folder. 
 
 .EXAMPLE
-C:\powershell\scripts\CreateDeptShare.ps1 -Identity Marketing -Path \\FileServer1\Contoso -StorePath \\FileServer1\PermissionLogs -Domain Contoso -AuditGroup Contoso_Audit
+C:\powershell\scripts\CreateDeptShare.ps1 -Identity Marketing -Path \\FileServer1\Contoso -StorePath \\FileServer1\PermissionLogs -Domain MakeStuff -AuditGroup MakeStuff_Audit
 
-Creates the Marketing department folder structure in the Contoso share on the FileServer1 server with the logs in a PermissionLogs folder on the same server.
-The Audit group in this case is named Contoso_Audit. 
+Creates the Marketing department folder structure in the Makestuff share on the FileServer1 server with the logs in a PermissionLogs folder on the same server.
+The Audit group in this case is named MakeStuff_Audit. 
 
 .EXAMPLE
 get-content .\Groups.txt | Foreach { C:\powershell\scripts\CreateDeptShare.ps1 -path \\server\Share\ -identity $_ -domain Contoso.com -storepath c:\perms }
@@ -55,7 +55,7 @@ Param (
         
         # Enter the name of the Auditor group
         [ValidateScript({ if (-not(Get-ADGroup -Identity $_)) {Throw "$_ is not a valid group name"} })]
-        [string]$AuditGroup = "Temp_Audit"
+        [string]$AuditGroup = "Audit"
     )
 
 Import-Module Permissions
@@ -78,18 +78,14 @@ $IsAudit = {
 #region Variables
 Write-Verbose "Defining Variables"
 $ACEStore = @{}
-$dept = Try {Get-ADGroup -Identity $Identity -Properties Members}
-    Catch {
-            Write-Warning $_.exception.message
-            Throw "Unable to resolve Identity $Identity"
-        }
+$dept = Get-ADGroup -Identity $Identity -Properties Members
 Write-Debug "Dept: $($dept.Name)"
 $Teams = $dept.Members
 Write-Debug "Teams: $Teams"
-$Teampaths = $Teams | foreach {"$path\$($dept.Name)\$($_.split(',')[0].trimstart('CN='))"  
-        "$path\$($dept.Name)\$($_.split(',')[0].trimstart('CN='))\Shared"  
-        "$path\$($dept.Name)\$($_.split(',')[0].trimstart('CN='))\Private"
-        "$path\$($dept.Name)\$($_.split(',')[0].trimstart('CN='))\Lead"
+$Teampaths = $Teams | foreach {
+        "$path\$($_.split(',')[0].trimstart('CN='))_Shared"  
+        "$path\$($_.split(',')[0].trimstart('CN='))_Private"
+        "$path\$($_.split(',')[0].trimstart('CN='))_Lead"
     }
 $deptpaths = "$path\$($dept.Name)","$path\$($dept.Name)_Open"
 $paths =  $deptFolders + $Teampaths
@@ -108,6 +104,7 @@ foreach ($p in $paths)
             {
               {$_.EndsWith('Open')} 
                 {
+                  Write-Verbose "Creating Dept Open @ $_"
                   New-Item -ItemType directory -Path $_ | Out-Null
                   $ACL = Get-Acl -Path $_
                   $param = @{
@@ -117,31 +114,39 @@ foreach ($p in $paths)
                       Propagation = "None"
                     }
                   $ACE = New-ACE @param
-                  Add-Rule -ACLObject $ACL -ACE $ACE -Type Access
+                  Try {Add-Rule -ACLObject $ACL -ACE $ACE -Type Access}
+                  Catch {Throw "Unable to add Audit to ACL"}
                   $param.Identity = "$Domain\Domain Users"
                   $param.permission = "ReadAndExecute"
                   $ACE = New-ACE @param
-                  Add-Rule -ACLObject $ACL -ACE $ACE -Type Access
+                  Try {Add-Rule -ACLObject $ACL -ACE $ACE -Type Access}
+                  Catch {Throw "Unable to add Audit to ACL"}
                   & $IsAudit
                   $ACEStore.Add($_,$ACL)
-                  Set-Acl -Path $_ -AclObject $ACL
+                  Write-Debug "Folder to Modify $_"
+                  Try {Set-Acl -Path $_ -AclObject $ACL}
+                  Catch {Throw "Unable to add set ACL on folder"}
                   break
                 }
               default 
                 {
+                  Write-Verbose "Creating Dept folder @ $_"
                   New-Item -ItemType directory -Force -Path $_ | Out-Null
                   $ACL = Get-Acl -Path $_
                   $param = @{
                       Identity = "$Domain\$($dept.Name)"
                       permission = "ReadAndExecute"
-                      inheritance = "None"
+                      inheritance = "ContainerInherit","ObjectInherit"
                       Propagation = "None"
                     }
                   $ACE = New-ACE @param
-                  Add-Rule -ACLObject $ACL -ACE $ACE -Type Access
+                  Try {Add-Rule -ACLObject $ACL -ACE $ACE -Type Access}
+                  Catch {Throw "Unable to add Audit to ACL"}
                   & $IsAudit
                   $ACEStore.Add($_,$ACL)
-                  Set-Acl -Path $_ -AclObject $ACL
+                  Write-Debug "Folder to Modify $_"
+                  Try {Set-Acl -Path $_ -AclObject $ACL}
+                  Catch {Throw "Unable to add ACL to folder"}
                 }
             }
           break
@@ -154,7 +159,7 @@ foreach ($p in $paths)
             { 
               {$_.EndsWith('Lead')} 
                 {
-                  Write-Verbose "Create Lead Folder"
+                  Write-Verbose "Create $($_.Split('\')[-2]) Lead Folder @ $_"
                   New-Item -ItemType directory -Path $_ | Out-Null
                   $ACL = Get-Acl -Path $_
                   $param = @{
@@ -164,15 +169,18 @@ foreach ($p in $paths)
                       Propagation = "None"
                     }
                   $ACE = New-ACE @param
-                  Add-Rule -ACLObject $ACL -ACE $ACE -Type Access
-                  #& $IsAudit
+                  try {Add-Rule -ACLObject $ACL -ACE $ACE -Type Access}
+                  Catch {Throw "Unable to add Audit to ACL"}
+                  & $IsAudit
                   $ACEStore.Add($_,$ACL)
-                  Set-Acl -Path $_ -AclObject $ACL
+                  Write-Debug "Folder to Modify $_"
+                  Try {Set-Acl -Path $_ -AclObject $ACL}
+                  Catch {Throw "Unable to add ACL to folder"}
                   break
                 } 
               {$_.EndsWith('Shared')} 
                 {
-                  Write-Verbose "Create Shared Folder"
+                  Write-Verbose "Create $($_.Split('\')[-2]) Shared Folder @ $_"
                   New-Item -ItemType directory -Path $_ | Out-Null
                   $ACL = Get-Acl -Path $_
                   $param = @{
@@ -182,19 +190,23 @@ foreach ($p in $paths)
                       Propagation = "None"
                     }
                   $ACE = New-ACE @param
-                  Add-Rule -ACLObject $ACL -ACE $ACE -Type Access
+                  try {Add-Rule -ACLObject $ACL -ACE $ACE -Type Access}
+                  Catch {Throw "Unable to add Audit to ACL"}
                   $param.Identity = "$Domain\$($dept.Name)"
                   $param.permission = "ReadAndExecute"
                   $ACE = New-ACE @param
-                  Add-Rule -ACLObject $ACL -ACE $ACE -Type Access
-                  #& $IsAudit
+                  Try {Add-Rule -ACLObject $ACL -ACE $ACE -Type Access}
+                  Catch {Throw "Unable to add Audit to ACL"}
+                  & $IsAudit
                   $ACEStore.Add($_,$ACL)
-                  Set-Acl -Path $_ -AclObject $ACL
+                  Write-Debug "Folder to Modify $_"
+                  Try {Set-Acl -Path $_ -AclObject $ACL}
+                  Catch {Throw "Unable to add set ACL on folder"}
                   break
                 } 
               {$_.EndsWith('Private')} 
                 {
-                  Write-Verbose "Create $($_.Split('\')[-2]) Private Folder"
+                  Write-Verbose "Create $($_.Split('\')[-2]) Private Folder @ $_"
                   New-Item -ItemType directory -Path $_ | Out-Null
                   $ACL = Get-Acl -Path $_
                   $param = @{
@@ -204,28 +216,14 @@ foreach ($p in $paths)
                       Propagation = "None"
                     }
                   $ACE = New-ACE @param
-                  Add-Rule -ACLObject $ACL -ACE $ACE -Type Access
-                  #& $IsAudit
+                  Try {Add-Rule -ACLObject $ACL -ACE $ACE -Type Access}
+                  Catch {Throw "Unable to add Audit to ACL"}
+                  & $IsAudit
                   $ACEStore.Add($_,$ACL)
-                  Set-Acl -Path $_ -AclObject $ACL
-                  break
-                } 
-              default 
-                {
-                  Write-Verbose "Create $($_.Split('\')[-2]) root Folder"
-                  New-Item -ItemType directory -Path $_ | Out-Null
-                  $ACL = Get-Acl -Path $_
-                  $param = @{
-                      Identity = "$Domain\$($dept.Name)"
-                      permission = "ReadAndExecute"
-                      inheritance = "None"
-                      Propagation = "None"
-                    }
-                  $ACE = New-ACE @param
-                  Add-Rule -ACLObject $ACL -ACE $ACE -Type Access
-                  $ACEStore.Add($_,$ACL)
-                  Set-Acl -Path $_ -AclObject $ACL
-                } 
+                  Write-Debug "Folder to Modify $_"
+                  Try {Set-Acl -Path $_ -AclObject $ACL}
+                  Catch {Throw "Unable to add set ACL on folder"}
+                }
             } 
           #endregion Team
         }
