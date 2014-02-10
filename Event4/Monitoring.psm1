@@ -22,7 +22,7 @@ Param
         [ipaddress]$IPAddress,
         
         #
-        [Parameter(Mandatory,
+        [Parameter(
         ValueFromPipeline,
         ValueFromPipelineByPropertyName)]
         [Alias('CPU')]
@@ -30,7 +30,7 @@ Param
         [string]$MonitorCPU,
         
         #
-        [Parameter(Mandatory,
+        [Parameter(
         ValueFromPipeline,
         ValueFromPipelineByPropertyName)]
         [Alias('RAM')]
@@ -38,7 +38,7 @@ Param
         [string]$MonitorRam,
         
         #
-        [Parameter(Mandatory,
+        [Parameter(
         ValueFromPipeline,
         ValueFromPipelineByPropertyName)]
         [Alias('Disk')]
@@ -46,7 +46,7 @@ Param
         [string]$MonitorDisk,
         
         #
-        [Parameter(Mandatory,
+        [Parameter(
         ValueFromPipeline,
         ValueFromPipelineByPropertyName)]
         [Alias('Network')]
@@ -103,3 +103,24 @@ Process
     $XML.Save($path)
 }
 }
+
+Function Deploy-Config
+{
+
+}
+
+Function Deploy-Key
+{
+
+}
+
+Function Audit-Config
+{
+
+}
+
+Function Audit-Deployment
+{
+
+}
+
