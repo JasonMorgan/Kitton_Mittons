@@ -127,15 +127,29 @@ copy -Path $path -Destination "\\$computername\c$\DRSmonitoring"
 
 }
 
-Function Deploy-Key
-# this requires administrator permissions
-{
+Function Deploy-Key{
+<#
+.SYNOPSIS
+   Deploys Registry Key for DRSmonitoring
+.DESCRIPTION
+   Checks for the presence of registry key HKLM:\SOFTWARE\DRSMonitoring with the dWord value of 1 for
+   Monitoring.  If the object is missing or incorrect, function add or corrects the value
+.EXAMPLE
+   .\Deploy-Key -ComputerName $computername
+
+   Deploys registry key to the computer specified by the variable $computername
+.INPUTS
+   Computer Name
+.OUTPUTS
+   none
+#>
 param(
-    [parameter(Mandatory)]
+    [parameter(Mandatory,
+    ValuefromPipeline=$true)]
     [string] $ComputerName
     )
 
-Invoke-Command  -ScriptBlock {    #-ComputerName $computername
+Invoke-Command  -ScriptBlock {-ComputerName $computername
 
 If(Test-path 'HKLM:\SOFTWARE\DRSmonitoring'){
     Write-Verbose "Get Value from registry"
@@ -148,7 +162,7 @@ If(Test-path 'HKLM:\SOFTWARE\DRSmonitoring'){
           
     If($a -ne 1){
         Write-Verbose " Need to add registry entry"
-        set-ItemProperty -Path 'HKLM:\SOFTWARE\DRSMonitoring' -Value 1 -Name Monitoring
+        set-ItemProperty -Path 'HKLM:\SOFTWARE\DRSMonitoring' -Value 2 -Name Monitoring
         }
 Else {
     write-verbose "Create key"
@@ -170,6 +184,24 @@ Function Audit-Config
 
 Function Audit-Deployment
 {
+<#
+.SYNOPSIS
+   Audits Registry Key and Config file for DRSmonitoring
+.DESCRIPTION
+   Checks for the presence of registry key HKLM:\SOFTWARE\DRSMonitoring with the dWord value of 1 for
+   Monitoring.  The status of the registry key is either correct, incorrect or missing.  Checks for the 
+   presence of the monitoring file in the path specified. 
+.EXAMPLE
+   .\Audit-Deployment -ComputerName $computername -path c:\DRSMonitoring
+
+   Checks for registry key and value as well as config file at c:\DRSMonitoring
+.INPUTS
+   Computer Name and path to config file
+.OUTPUTS
+   PS Custom Object
+
+#>
+
 param (
     [parameter(Mandatory)]
     $ComputerName,
@@ -178,68 +210,60 @@ param (
     $path
     )
 
-#   - Audit Deployment Function
-#      - Does the Key exist?  HKLM:\SOFTWARE\DRSmonitoring
-    Test-path 'HKLM:\SOFTWARE\DRSmonitoring'
-
-#      - is it set correctly?
+# The directions appear to only ask for the the registry value, so this if else statement may not be necessary
+Write-Verbose "Testing for Registry Key"
+    If(Test-path 'HKLM:\SOFTWARE\DRSmonitoring'){
+        $RegKey = 'present'
+    }
+    Else{
+        $RegKey = 'missing'
+    }
+Write-Verbose "Testing for Registry Value"
     $a = Get-ItemProperty -path HKLM:\SOFTWARE\DRSMonitoring -Name Monitoring -ErrorAction Stop
-     If($a -ne 1){
-        Write-Verbose "Registry entry is missing"
-        $registryValuepresent = $false
-        }
-     Else {
-        $registryValuepresent = $false
-        }
 
+     Switch ( $a.Monitoring)
+     {
+         '1' {
+            $registryValuepresent = 'correct'
+            }
+         $null{
+            $registryValuepresent = 'missing'
+            } 
+         {$_ -ne 1 -and $_ -ne $null} {
+            $registryValuepresent = 'incorrect value'
+            }
+     }
 
-#      - Key Value
-    If((Get-ItemProperty -path HKLM:\SOFTWARE\DRSMonitoring -Name Monitoring -ErrorAction Stop) -ne 1){
-        $RegValuePresent = $false
-        }
-    Else {
-        $RegValuePresent = $true
-        }
+Write-Verbose "Testing for Configuration File"
+    If(Test-path $path){
+        $ConfigFileStatus = 'present'
+    }
+    Else{$ConfigFileStatus = 'missing'
+    }
 
-#      - Audit Date
-$Auditdate = Get-Date 
-#      - Computername
-$computername = Get-WmiObject win32_computersystem -Property Name
-#      - is the config file deployed?
-    If(Test-path $path)
+Write-Verbose "Collecting data into PS Custom Object"
+    $data = @()
+    $data =[Pscustomobject]@{
+        "Server" = (Get-WmiObject win32_computersystem -Property Name)
+        "Audit Date" = (Get-Date -Format g);
+        "Configuration File" = $ConfigFileStatus;
+        "Registry Key" = $RegKey;
+        "Registry Value" = $registryValuepresent
+        } 
 
+        $data 
+}
 
-#hash table
+# Requested report
 #•	Servers where the registry key existed and was set correctly
 #•	Servers where the registry key existed and was set incorrectly
 #•	Servers where the registry key had to be created
 #•	Servers that have had the monitoring config file installed
 
-}
+
 
 #      - custom Type
 #      - Default Formatting
 
 
-
-Function Test-RegistryValue {
-
-param (
-[parameter(Mandatory=$true)]
-[ValidateNotNullorEmpty()]
-$path,
-
-[parameter(Mandatory=$true)]
-[ValidateNotNullorEmpty()]
-$Value
-)
-
-    Get-ItemProperty -Path $path | Select-Object -ExpandProperty $value -ErrorAction Stop | Out-Null
-     $true
-}
-catch 
-{
-    return $false
-}
-}
 
