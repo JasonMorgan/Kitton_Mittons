@@ -121,6 +121,51 @@ Function Audit-Config
 
 Function Audit-Deployment
 {
+#   - Audit Deployment Function
+#      - Does the Key exist?  HKLM:\SOFTWARE\DRSmonitoring
+Test-path 'HKLM:\SOFTWARE\DRSmonitoring'
+Test-path c:\drsmonitoring
 
+Test-RegistryValue -path 'HKLM:\SOFTWARE\DRSmonitoring' -value 1
+#      - is it set correctly?
+#      - Key Value
+
+#      - Audit Date
+$Auditdate = Get-Date 
+#      - Computername
+$computername = Get-WmiObject win32_computersystem -Property Name
+#      - is the config file deployed?
+
+#      - Is the config file current?
+#      - Able to update config.xml if required
+#      - custom Type
+#      - Default Formatting
+}
+
+
+
+
+
+Function Test-RegistryValue {
+
+param (
+[parameter(Mandatory=$true)]
+[ValidateNotNullorEmpty()]
+$path,
+
+[parameter(Mandatory=$true)]
+[ValidateNotNullorEmpty()]
+$Value
+)
+
+try
+{
+    Get-ItemProperty -Path $path | Select-Object -ExpandProperty $value -ErrorAction Stop |Out-Null
+    return $true
+}
+catch 
+{
+    return $false
+}
 }
 
