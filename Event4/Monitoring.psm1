@@ -3,7 +3,17 @@
 Function New-XMLConfig
 {
 <#
+.SYNOPSIS
+Create a new XML monitoring object
 
+.DESCRIPTION
+
+
+.EXAMPLE
+
+.EXAMPLE
+
+.NOTES
 #>
 Param
     (
