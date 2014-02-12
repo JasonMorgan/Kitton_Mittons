@@ -123,47 +123,102 @@ param (
     [parameter(Mandatory)]
     $path
 )
-
-
-}
-
-Function Deploy-Key
-{
 copy -Path $path -Destination "\\$computername\c$\DRSmonitoring"
 
 }
 
+Function Deploy-Key
+# this requires administrator permissions
+{
+param(
+    [parameter(Mandatory)]
+    [string] $ComputerName
+    )
+
+Invoke-Command  -ScriptBlock {    #-ComputerName $computername
+
+If(Test-path 'HKLM:\SOFTWARE\DRSmonitoring'){
+    Write-Verbose "Get Value from registry"
+    Try {
+    $a = Get-ItemProperty -path HKLM:\SOFTWARE\DRSMonitoring -Name Monitoring -ErrorAction Stop
+        }
+    Catch {
+      New-ItemProperty -Path 'HKLM:\SOFTWARE\DRSMonitoring' -PropertyType Dword -Value 1 -Name Monitoring
+        }
+          
+    If($a -ne 1){
+        Write-Verbose " Need to add registry entry"
+        set-ItemProperty -Path 'HKLM:\SOFTWARE\DRSMonitoring' -Value 1 -Name Monitoring
+        }
+Else {
+    write-verbose "Create key"
+    New-Item -Path 'HKLM:\SOFTWARE\DRSMonitoring'
+    Write-Verbose "Create Registry Value"
+    New-ItemProperty -Path 'HKLM:\SOFTWARE\DRSMonitoring' -PropertyType Dword -Value 1 -Name Monitoring
+    }
+  }
+  }
+}
+
 Function Audit-Config
 {
-    
+#      - Is the config file current?
+#      - Able to update config.xml if required    
 
 
 }
 
 Function Audit-Deployment
 {
+param (
+    [parameter(Mandatory)]
+    $ComputerName,
+
+    [parameter(Mandatory)]
+    $path
+    )
+
 #   - Audit Deployment Function
 #      - Does the Key exist?  HKLM:\SOFTWARE\DRSmonitoring
-Test-path 'HKLM:\SOFTWARE\DRSmonitoring'
-Test-path c:\drsmonitoring
+    Test-path 'HKLM:\SOFTWARE\DRSmonitoring'
 
-Test-RegistryValue -path 'HKLM:\SOFTWARE\DRSmonitoring' -value 1
 #      - is it set correctly?
+    $a = Get-ItemProperty -path HKLM:\SOFTWARE\DRSMonitoring -Name Monitoring -ErrorAction Stop
+     If($a -ne 1){
+        Write-Verbose "Registry entry is missing"
+        $registryValuepresent = $false
+        }
+     Else {
+        $registryValuepresent = $false
+        }
+
+
 #      - Key Value
+    If((Get-ItemProperty -path HKLM:\SOFTWARE\DRSMonitoring -Name Monitoring -ErrorAction Stop) -ne 1){
+        $RegValuePresent = $false
+        }
+    Else {
+        $RegValuePresent = $true
+        }
 
 #      - Audit Date
 $Auditdate = Get-Date 
 #      - Computername
 $computername = Get-WmiObject win32_computersystem -Property Name
 #      - is the config file deployed?
+    If(Test-path $path)
 
-#      - Is the config file current?
-#      - Able to update config.xml if required
-#      - custom Type
-#      - Default Formatting
+
+#hash table
+#•	Servers where the registry key existed and was set correctly
+#•	Servers where the registry key existed and was set incorrectly
+#•	Servers where the registry key had to be created
+#•	Servers that have had the monitoring config file installed
+
 }
 
-
+#      - custom Type
+#      - Default Formatting
 
 
 
