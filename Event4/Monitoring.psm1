@@ -116,16 +116,27 @@ Process
 
 Function Deploy-Config
 {
+param (
+    [parameter(Mandatory)]
+    $ComputerName,
+
+    [parameter(Mandatory)]
+    $path
+)
+
 
 }
 
 Function Deploy-Key
 {
+copy -Path $path -Destination "\\$computername\c$\DRSmonitoring"
 
 }
 
 Function Audit-Config
 {
+    
+
 
 }
 
@@ -168,10 +179,8 @@ $path,
 $Value
 )
 
-try
-{
-    Get-ItemProperty -Path $path | Select-Object -ExpandProperty $value -ErrorAction Stop |Out-Null
-    return $true
+    Get-ItemProperty -Path $path | Select-Object -ExpandProperty $value -ErrorAction Stop | Out-Null
+     $true
 }
 catch 
 {
