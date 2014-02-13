@@ -148,16 +148,51 @@ Process
 }
 }
 
-Function Deploy-Config
+
+<#
+.SYNOPSIS
+   Deploys XML file for monitoring file.
+.DESCRIPTION
+   Copies configuration file to target system.  If target directory is missing, function will 
+   create the directory.  
+
+   The target path for the file can be specified, but the default is C:\DrsMonitoring
+.EXAMPLE
+   .\Deploy-Config -ComputerName $computername
+
+   Deploys XML file to the computer specified by the variable $computername
+.INPUTS
+   ComputerName
+   Path
+.OUTPUTS
+   none
+#>
 {
 param (
-    [parameter(Mandatory)]
+    [parameter(Mandatory,HelpMessage="Enter one or more computer names separated by commas.")]
+    [Alias("MachineName","Server")]
+    [String[]]
     $ComputerName,
 
     [parameter(Mandatory)]
-    $path
+    [alias("CN","MachineName")]
+    $Path="c:\DrsMonitoring"
 )
-copy -Path $path -Destination "\\$computername\c$\DRSmonitoring"
+
+#Copy file to server, test if copied ok, add error handle if unable to copy or create directory
+If (!(Test-Path \\$Name\c$\drsmonitoring){Invoke-Command -ComputerName $Name -ScriptBlock { 
+             New-Item -Path $Path -Type directory -Force 
+             Write-Host "Folder creation complete"
+         }
+
+Try {
+    Copy-item $filename -Destination \\$Name\C$\drsmonitoring -ErrorAction Stop
+    }
+
+Catch [System.IO.DirectoryNotFoundException,Microsoft.PowerShell.Commands.CopyItemCommand]
+    {
+    Write-error "Wasn't able to copy the file, check to see if we have rights to copy a file"
+    }
 
 }
 
