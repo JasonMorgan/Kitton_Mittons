@@ -174,8 +174,7 @@ param (
     [String[]]
     $ComputerName,
 
-    [parameter(Mandatory)]
-    [alias("CN","MachineName")]
+    [parameter()]
     $Path="c:\DrsMonitoring"
 )
 
