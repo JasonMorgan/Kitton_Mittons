@@ -314,37 +314,35 @@ Function Test-Config
 .EXAMPLE
     Audit-Config -Path xxx -Algorithm yyy -Remediate
 
-.INPUTS
-    ...
-
-.OUTPUTS
-    ...    
 #>
 
 param (
     [parameter(Mandatory)]
-    [ValidateScript({Test-Path $_ -PathType Container})]
-    $Path,
+    [ValidateScript({(Test-Path $_ -PathType leaf) -and ($_.endwiths('.xml'))})]
+    [String]$Path,
 
     [parameter(Mandatory)]
-    [ValidateScript({Test-Path $_ -PathType Leaf})]
-    $Target,
+    [ValidateScript({(Test-Path $_ -PathType Leaf) -and ($_.endwiths('.xml'))} )]
+    [String]$Target,
 
     [switch]$Remediate
         )
-
-$remote = Get-FileHash -Path $Target
-$local = Get-FileHash -Path C:\monitoringfiles\someserversomefile.xml
-
-$compare = Compare-Object -ReferenceObject $local.SHA256 -DifferenceObject $remote.SHA256
-
-if ($compare) {$false}
+if (Compare-Object -ReferenceObject (Get-FileHash -Path $Target).SHA256 -DifferenceObject (Get-FileHash -Path $Path).SHA256) 
+  {
+    Switch ($Remediate)
+      {
+        $true { 
+            Try {Copy-Item -Path $Path -Destination $Target -Force -ErrorAction Stop}
+            Catch {
+                Write-Warning "Failed to overwrite $Target"
+                $false
+              }
+          }
+        Default {$false}
+      }
+  }
 else {$true}
-
-}  
-
-
-}
+} 
 
 Function Audit-Deployment
 {
