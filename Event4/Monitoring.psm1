@@ -161,7 +161,8 @@ copy -Path $path -Destination "\\$computername\c$\DRSmonitoring"
 
 }
 
-Function Deploy-Key{
+Function Deploy-Key
+{
 <#
 .SYNOPSIS
    Deploys Registry Key for DRSmonitoring
