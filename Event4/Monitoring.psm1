@@ -164,49 +164,98 @@ copy -Path $path -Destination "\\$computername\c$\DRSmonitoring"
 Function Deploy-Key
 {
 <#
+
 .SYNOPSIS
-   Deploys Registry Key for DRSmonitoring
+Deploys Registry Key for DRSmonitoring
+
 .DESCRIPTION
-   Checks for the presence of registry key HKLM:\SOFTWARE\DRSMonitoring with the dWord value of 1 for
-   Monitoring.  If the object is missing or incorrect, function add or corrects the value
+Checks for the presence of registry key HKLM:\SOFTWARE\DRSMonitoring with the dWord value of 1 for
+Monitoring.  If the object is missing or incorrect, function add or corrects the value
+
 .EXAMPLE
-   .\Deploy-Key -ComputerName $computername
+Deploy-Key -ComputerName $computername
 
-   Deploys registry key to the computer specified by the variable $computername
-.INPUTS
-   Computer Name
-.OUTPUTS
-   none
+Deploys registry key to the computer specified by the variable $computername
+
+.EXAMPLE
+
+.NOTES
+
+
 #>
-param(
-    [parameter(Mandatory,
-    ValuefromPipeline=$true)]
-    [string] $ComputerName
-    )
-
-Invoke-Command  -ScriptBlock {-ComputerName $computername
-
-If(Test-path 'HKLM:\SOFTWARE\DRSmonitoring'){
-    Write-Verbose "Get Value from registry"
-    Try {
-    $a = Get-ItemProperty -path HKLM:\SOFTWARE\DRSMonitoring -Name Monitoring -ErrorAction Stop
-        }
-    Catch {
-      New-ItemProperty -Path 'HKLM:\SOFTWARE\DRSMonitoring' -PropertyType Dword -Value 1 -Name Monitoring
-        }
-          
-    If($a -ne 1){
-        Write-Verbose " Need to add registry entry"
-        set-ItemProperty -Path 'HKLM:\SOFTWARE\DRSMonitoring' -Value 2 -Name Monitoring
-        }
-Else {
-    write-verbose "Create key"
-    New-Item -Path 'HKLM:\SOFTWARE\DRSMonitoring'
-    Write-Verbose "Create Registry Value"
-    New-ItemProperty -Path 'HKLM:\SOFTWARE\DRSMonitoring' -PropertyType Dword -Value 1 -Name Monitoring
+[CmdletBinding(ConfirmImpact='Medium')]
+param (
+      # Enter a computername or multiple computernames
+      [Parameter(
+      Mandatory=$True, 
+      ValueFromPipeline=$True, 
+      ValueFromPipelineByPropertyName=$True,
+      HelpMessage="Enter a ComputerName or IP Address, accepts multiple ComputerNames")]             
+      [Alias("__Server","PSComputerName")]
+      [String[]]$ComputerName,
+      # Enter a Credential object, like (Get-credential)
+      [Parameter(
+      HelpMessage="Enter a Credential object, like (Get-credential)")]
+      [System.Management.Automation.PSCredential]$credential
+      )
+Begin 
+{
+  $Params = @{
+    Scriptblock = {
+        Try {$VerbosePreference = $Using:VerbosePreference} Catch {}
+        Switch (Test-path 'HKLM:\SOFTWARE\DRSmonitoring')
+          {
+            $true {
+                Write-Verbose "Test property and value registry"
+                Try {
+                    $monitoring = Get-ItemProperty -path HKLM:\SOFTWARE\DRSMonitoring -Name Monitoring -ErrorAction Stop
+                  }
+                Catch {
+                    New-ItemProperty -Path 'HKLM:\SOFTWARE\DRSMonitoring' -PropertyType Dword -Value 1 -Name Monitoring
+                  }
+                If($monitoring -ne 1) 
+                  {
+                    Write-Verbose "Set Monitoring Value"
+                    set-ItemProperty -Path 'HKLM:\SOFTWARE\DRSMonitoring' -Value 1 -Name Monitoring
+                  }
+              }
+            $false {
+                write-verbose "Create key"
+                Try {New-Item -Path 'HKLM:\SOFTWARE\DRSMonitoring' -ErrorAction stop | Out-Null}
+                Catch {Throw "Unable to create Key on $ENV:COMPUTERNAME"}
+                Write-Verbose "Create Registry Value"
+                Try {New-ItemProperty -Path 'HKLM:\SOFTWARE\DRSMonitoring' -PropertyType Dword -Value 1 -Name Monitoring}
+                Catch {
+                    Write-Error $_.exception.message
+                    Write-Warning "Failed to set the Monitoring property on $ENV:COMPUTERNAME, please ensure you manually set the property value before continuing"
+                  }
+              }
+          }
+      }
+            }
+        If ($credential) {$Params.Add('Credential',$credential)}
     }
-  }
-  }
+Process
+    {
+        [System.Collections.ArrayList]$comps += $ComputerName 
+    }
+End {
+        if ($Comps -contains $ENV:COMPUTERNAME)
+                {
+                    $Comps.Remove("$ENV:COMPUTERNAME")
+                    $local = $True
+                }
+            if (($Comps |measure).Count -gt 0)
+                {
+                    $params.Add('ComputerName',$Comps)
+                    Invoke-Command @params
+                }
+            if ($local)
+                {
+                    Try {$params.Remove('ComputerName')} Catch {Write-Verbose "Sending errors to the void!"}
+                    Invoke-Command @params
+                }   
+    }
 }
 
 Function Audit-Config
