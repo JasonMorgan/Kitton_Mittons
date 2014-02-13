@@ -148,7 +148,7 @@ Process
 }
 }
 
-
+Function Deploy-Config
 <#
 .SYNOPSIS
    Deploys XML file for monitoring file.
