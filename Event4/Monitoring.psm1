@@ -301,10 +301,47 @@ End {
     }
 }
 
-Function Audit-Config
+Function Test-Config
 {
-#      - Is the config file current?
-#      - Able to update config.xml if required    
+<#
+.SYNOPSIS
+    Compares the local copy of the original config file against the current config file on the remote server
+
+.DESCRIPTION
+    This function checks the SHA256 hash value of the local and remote xml configuration file
+    If the hash values match, no action is taken, if the hash values differ it will 
+
+.EXAMPLE
+    Audit-Config -Path xxx -Algorithm yyy -Remediate
+
+.INPUTS
+    ...
+
+.OUTPUTS
+    ...    
+#>
+
+param (
+    [parameter(Mandatory)]
+    [ValidateScript({Test-Path $_ -PathType Container})]
+    $Path,
+
+    [parameter(Mandatory)]
+    [ValidateScript({Test-Path $_ -PathType Leaf})]
+    $Target,
+
+    [switch]$Remediate
+        )
+
+$remote = Get-FileHash -Path $Target
+$local = Get-FileHash -Path C:\monitoringfiles\someserversomefile.xml
+
+$compare = Compare-Object -ReferenceObject $local.SHA256 -DifferenceObject $remote.SHA256
+
+if ($compare) {$false}
+else {$true}
+
+}  
 
 
 }
