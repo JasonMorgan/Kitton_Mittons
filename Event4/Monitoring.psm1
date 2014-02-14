@@ -14,6 +14,7 @@ New-XMLConfig -ComputerName Server01 -IPAddress 192.168.10.1 -MonitorCPU True -M
 
 .EXAMPLE
 
+
 .NOTES
 Written by the Kitton Mittons
 For the 2014 Winter Scripting Games
@@ -148,7 +149,7 @@ Process
 }
 }
 
-Function Deploy-Config
+Function Install-Config
 {
 <#
 .SYNOPSIS
@@ -161,7 +162,7 @@ Function Deploy-Config
    The target path for the file can be specified, but the default is C:\DrsMonitoring
 
 .EXAMPLE
-   Deploy-Config -ComputerName $computername
+   Install-Config -ComputerName $computername
 
    Deploys XML file to the computer specified by the variable $computername
 
@@ -204,7 +205,7 @@ Catch [System.IO.DirectoryNotFoundException,Microsoft.PowerShell.Commands.CopyIt
 
 }
 
-Function Deploy-Key
+Function Install-Key
 {
 <#
 
@@ -216,14 +217,18 @@ Checks for the presence of registry key HKLM:\SOFTWARE\DRSMonitoring with the dW
 Monitoring.  If the object is missing or incorrect, function add or corrects the value
 
 .EXAMPLE
-Deploy-Key -ComputerName $computername
+Install-Key -ComputerName $computername
 
 Deploys registry key to the computer specified by the variable $computername
 
 .EXAMPLE
 
 .NOTES
-
+Written by the Kitton Mittons
+For the 2014 Winter Scripting Games
+Version 1.1
+Created on: 2/9/2014
+Last Modified: 2/12/2014
 
 #>
 [CmdletBinding(ConfirmImpact='Medium')]
@@ -314,6 +319,12 @@ Function Test-Config
 .EXAMPLE
     Audit-Config -Path xxx -Algorithm yyy -Remediate
 
+.NOTES
+Written by the Kitton Mittons
+For the 2014 Winter Scripting Games
+Version 1.1
+Created on: 2/9/2014
+Last Modified: 2/12/2014
 #>
 
 param (
