@@ -13,7 +13,11 @@ This function will create a new DRMonitoring configuration file.  It is able to 
 New-XMLConfig -ComputerName Server01 -IPAddress 192.168.10.1 -MonitorCPU True -MonitorRam True -MonitorDisk True -MonitorNetwork False
 
 .EXAMPLE
-*Example using pipeline to input the Server and IP
+Import-csv .\computers.csv | New-XMLConfig | foreach { out-XML -XML $_ -Path "C:\MonitoringFiles\$($_.DRSmonitoring.Server.Name).xml" }
+
+Create unique config.xml files for each server according to the name listed in Computers.csv
+
+Load all 
 
 .NOTES
 Written by the Kitton Mittons
@@ -122,12 +126,20 @@ $XML | Out-XMLFile -path C:\MonitoringFiles\Server1.xml
 .EXAMPLE
 Import-csv .\servers.csv | New-XMLConfig | foreach { out-XML -XML $_ -Path "C:\MonitoringFiles\$($_.DRSmonitoring.Server.Name).xml" }
 
+Create unique config.xml files for each server according to the name listed in Computers.csv
+
 .NOTES
 Written by the Kitton Mittons
 For the 2014 Winter Scripting Games
 Version 1.1
 Created on: 2/9/2014
 Last Modified: 2/12/2014
+
+.INPUTS
+XML
+
+.OUTPUTS
+none
 
 #>
 Param
@@ -298,20 +310,20 @@ Process
     }
 End {
         if ($Comps -contains $ENV:COMPUTERNAME)
-                {
-                    $Comps.Remove("$ENV:COMPUTERNAME")
-                    $local = $True
-                }
-            if (($Comps |measure).Count -gt 0)
-                {
-                    $params.Add('ComputerName',$Comps)
-                    Invoke-Command @params
-                }
-            if ($local)
-                {
-                    Try {$params.Remove('ComputerName')} Catch {Write-Verbose "Sending errors to the void!"}
-                    Invoke-Command @params
-                }   
+            {
+                $Comps.Remove("$ENV:COMPUTERNAME")
+                $local = $True
+            }
+        if (($Comps |measure).Count -gt 0)
+            {
+                $params.Add('ComputerName',$Comps)
+                Invoke-Command @params
+            }
+        if ($local)
+            {
+                Try {$params.Remove('ComputerName')} Catch {Write-Verbose "Sending errors to the void!"}
+                Invoke-Command @params
+            }   
     }
 }
 
