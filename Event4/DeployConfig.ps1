@@ -57,7 +57,7 @@ $InstallPath = $InstallPath.replace(';','$')
 Write-Debug "`$installpath: $InstallPath "
 #endregion Opening
 
-#region Create jobs
+#region Do work
 Write-Verbose "Building Config files"
 Try {
     $i = 0
@@ -102,7 +102,7 @@ Catch
     Write-Warning $_.exception.message
     Throw "Unable to deploy config files, aborting operation"
   }
-#endregion Create jobs
+#endregion Do Work
 
 #region complete
 

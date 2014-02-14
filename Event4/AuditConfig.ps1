@@ -5,16 +5,16 @@ AuditDeployment
 Param
 (
     # Enter the target computername(s)
-    [Parameter(ParameterSetName="Default")]
-    [Parameter(ParameterSetName="Report")]
-    [Parameter(ParameterSetName="Remediate")]
+    [Parameter(Mandatory,ParameterSetName="Default")]
+    [Parameter(Mandatory,ParameterSetName="Report")]
+    [Parameter(Mandatory,ParameterSetName="Remediate")]
     [string[]]$computername,
     
-    # Path to most recent config.xml files directory
+    # Path to config files directory
     [Parameter(ParameterSetName="Default")]
     [Parameter(ParameterSetName="Report")]
     [Parameter(ParameterSetName="Remediate")]
-    [string]$ConfigPath,
+    [string]$ConfigPath = "C:\monitoringFiles",
 
     # Path to audit for install directories, only set if you are using a non standard install root
     [Parameter(ParameterSetName="Default")]
@@ -22,11 +22,11 @@ Param
     [Parameter(ParameterSetName="Remediate")]
     [string]$InstallPath = "c:\DRSMonitoring\config.xml",
 
-    #
+    # Set if you'd like the Script to automatically remediate old config files
     [Parameter(ParameterSetName="Remediate")]
     [switch]$Remediate,
 
-    #
+    # 
     [Parameter(ParameterSetName="Default")]
     [Parameter(ParameterSetName="Report")]
     [Parameter(ParameterSetName="Remediate")]
@@ -57,15 +57,23 @@ foreach ($c in $computername)
     $i++
     Start-Job -Name Test$i -ArgumentList $c,$InstallPath,$Remediate -ScriptBlock {
         Param ($Computer,$installpath,$Remediate)
+        Write-Verbose "Build Audit object"
+        $aud = Test-Deployment -ComputerName $args
         Write-Verbose "Update config if required"
+        $current = $true
         if (-not(Test-Config -Target (Join-Path -ChildPath \\$args -ChildPath $InstallPath)))
           {
             if ($Remediate)
               {
-                Test-Config -Target (Join-Path -ChildPath \\$args -ChildPath $InstallPath) -Remediate
+                Try {Test-Config -Target (Join-Path -ChildPath \\$args -ChildPath $InstallPath) -Remediate -ErrorAction stop}
+                Catch {
+                    Write-Error "Unable to update config.xml on $Computer"
+                    $current = $false
+                  }
               }
+            else {$current = $false}
           }
-        Test-Deployment -ComputerName $args
+        $aud | Add-Member -MemberType NoteProperty -Name ConfigFileCurrent -Value $current
       }
   }
 if ($ShowProgress)
@@ -97,4 +105,11 @@ $html = @"
   $(get-job -Name Test* | receive-job | ConvertTo-Html -Fragment -as List | Out-String )
 </body></html>
 "@ 
+
+$html | Out-File -FilePath $Path
 #endregion Report
+
+#region Cleanup
+Write-Verbose "Cleaning up jobs"
+get-job -Name Test* | Remove-Job
+#endregion Cleanup
