@@ -13,7 +13,7 @@ This function will create a new DRMonitoring configuration file.  It is able to 
 New-XMLConfig -ComputerName Server01 -IPAddress 192.168.10.1 -MonitorCPU True -MonitorRam True -MonitorDisk True -MonitorNetwork False
 
 .EXAMPLE
-
+*Example using pipeline to input the Server and IP
 
 .NOTES
 Written by the Kitton Mittons
@@ -169,8 +169,17 @@ Function Install-Config
 .INPUTS
    ComputerName
    Path
+
 .OUTPUTS
    none
+
+.NOTES
+Written by the Kitton Mittons
+For the 2014 Winter Scripting Games
+Version 1.1
+Created on: 2/9/2014
+Last Modified: 2/12/2014
+
 #>
 param 
   (
@@ -325,6 +334,7 @@ For the 2014 Winter Scripting Games
 Version 1.1
 Created on: 2/9/2014
 Last Modified: 2/12/2014
+
 #>
 
 param (
@@ -360,18 +370,30 @@ Function Test-Deployment
 <#
 .SYNOPSIS
    Audits Registry Key and Config file for DRSmonitoring
+
 .DESCRIPTION
    Checks for the presence of registry key HKLM:\SOFTWARE\DRSMonitoring with the dWord value of 1 for
    Monitoring.  The status of the registry key is either correct, incorrect or missing.  Checks for the 
    presence of the monitoring file in the path specified. 
+
 .EXAMPLE
    .\Audit-Deployment -ComputerName $computername -path c:\DRSMonitoring
 
    Checks for registry key and value as well as config file at c:\DRSMonitoring
+
 .INPUTS
    Computer Name and path to config file
+
 .OUTPUTS
    PS Custom Object
+
+.NOTES
+Written by the Kitton Mittons
+For the 2014 Winter Scripting Games
+Version 1.1
+Created on: 2/9/2014
+Last Modified: 2/12/2014
+
 #>
 [CmdletBinding(ConfirmImpact='Medium')]
 param (
