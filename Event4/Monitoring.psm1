@@ -1,4 +1,4 @@
-<##>
+#requires -Version 3
 
 Function New-XMLConfig
 {

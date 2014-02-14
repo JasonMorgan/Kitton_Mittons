@@ -102,8 +102,27 @@ Catch
     Write-Warning $_.exception.message
     Throw "Unable to deploy config files, aborting operation"
   }
+Write-Verbose "Deploy Registry key"
+try {
+    $i = 0
+    Foreach ($t in $Total)
+      {
+        if ($ShowProgress)
+          {
+            $i ++
+            $prog = @{
+                Activity = "Deploying Registry key"
+                Status = "$i of $($total.count)"
+                PercentComplete = ($i/$total.count *100)
+              }
+            Write-Progress @prog
+          }
+        Install-Key -ComputerName $t.server
+      }
+  }
+Catch 
+  {
+    Write-Warning $_.exception.message
+    Throw "Unable to deploy Registry keys, aborting operation"
+  }
 #endregion Do Work
-
-#region complete
-
-#endregion

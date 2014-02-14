@@ -1,5 +1,7 @@
 ﻿<#
 AuditDeployment
+
+#requires -Version 3
 #>
 [cmdletbinding(DefaultParameterSetName="Default")]
 Param
