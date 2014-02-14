@@ -35,87 +35,74 @@ Last Modified: 2/14/2014
 #>
 [CmdletBinding(ConfirmImpact='High')]
 Param
-    (
-    
+  (
+    # Path to input csv file
+    [string]$path,
+
+    # Install path for remote computers
+    [String]$InstallPath = "C:\DRSMonitoring",
+
+    # Path to config file store
+    [string]$StorePath = "C:\MonitoringFiles",
+
     #
-    [Parameter(Mandatory,
-    ValueFromPipeline,
-    ValueFromPipelineByPropertyName)]
-    [Alias('Server')]
-    [string]$ComputerName,
-        
-    #
-    [Parameter(Mandatory,
-    ValueFromPipeline,
-    ValueFromPipelineByPropertyName)]
-    [Alias('IP')]
-    [ipaddress]$IPAddress,
-        
-    # Set monitor CPU, true/false
-    [Parameter(
-    ValueFromPipeline,
-    ValueFromPipelineByPropertyName)]
-    [Alias('CPU')]
-    [ValidateSet('True','False',$null)]
-    [string]$MonitorCPU,
-        
-    # Set monitor RAM, true/false
-    [Parameter(
-    ValueFromPipeline,
-    ValueFromPipelineByPropertyName)]
-    [Alias('RAM')]
-    [ValidateSet('True','False',$null)]
-    [string]$MonitorRam,
-        
-    # Set monitor disk, true/false
-    [Parameter(
-    ValueFromPipeline,
-    ValueFromPipelineByPropertyName)]
-    [Alias('Disk')]
-    [ValidateSet('True','False',$null)]
-    [string]$MonitorDisk,
-        
-    # Set monitor network, true/false
-    [Parameter(
-    ValueFromPipeline,
-    ValueFromPipelineByPropertyName)]
-    [Alias('Network')]
-    [ValidateSet('True','False',$null)]
-    [string]$MonitorNetwork,
+    [switch]$ShowProgress
+  )
 
-    # Set Destination directory
-    [parameter()]
-    $Destination="c:\DrsMonitoring"
-
-    )
-
-#region Initialize
-try{
-    if ($VerbosePreference){
-        Import-Module .\Monitoring.psm1 -PassThru -ErrorAction Stop}
-        ELSE{
-        Import-Module .\Monitoring.psm1 -ErrorAction Stop}
-    }
-catch{
-    Throw "Unable to load Monitoring module, place in local directory and then rerun"
-    }
-
-
-#endregion Initialize
+#region Opening
+Write-Verbose "Load Module"
+Try {Import-Module Monitoring}
+Catch {Throw "Unable to load Module file, verify that the MOnitoring.psm1 file has been loaded on this computer."}
+$InstallPath = $InstallPath.replace(';','$')
+Write-Debug "`$installpath: $InstallPath "
+#endregion Opening
 
 #region Create jobs
-
-#if using pipeline, create for each object
-New-XMLConfig
-#if using express input, execute
-
-#endregion
-
-
-
-#region showprogress
-
-#endregion
+Write-Verbose "Building Config files"
+Try {
+    $i = 0
+    Import-Csv -Path $path | Tee-Object -Variable Total | New-XMLConfig | foreach { 
+        if ($ShowProgress)
+          {
+            $i ++
+            $prog = @{
+                Activity = "Building Configs"
+                Status = "$i of $($total.count)"
+                PercentComplete = ($i/$total.count *100)
+              }
+            Write-Progress @prog
+          }
+        out-XMLFile -XML $_ -Path "C:\MonitoringFiles\$($_.DRSmonitoring.Server.Name).xml" 
+      }
+  }
+Catch {
+    Write-Warning $_.exception.message
+    Throw "Unable to build config files, aborting operation"
+  }
+Write-Verbose "Deploy config files"
+try {
+    $i = 0
+    Foreach ($t in $Total)
+      {
+        if ($ShowProgress)
+          {
+            $i ++
+            $prog = @{
+                Activity = "Deploying Config files"
+                Status = "$i of $($total.count)"
+                PercentComplete = ($i/$total.count *100)
+              }
+            Write-Progress @prog
+          }
+        Install-Config -Path "$StorePath\$($t.Server).xml" -ComputerName $t.server
+      }
+  }
+Catch 
+  {
+    Write-Warning $_.exception.message
+    Throw "Unable to deploy config files, aborting operation"
+  }
+#endregion Create jobs
 
 #region complete
 
