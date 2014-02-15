@@ -398,7 +398,7 @@ if (Compare-Object -ReferenceObject (Get-FileHash -Path $Target).SHA256 -Differe
 else {$true}
 } 
 
-Function Test-Deployment
+Function Test-Deployment # Done -JM
 {
 <#
 .SYNOPSIS
@@ -410,9 +410,14 @@ Function Test-Deployment
    presence of the monitoring file in the path specified. 
 
 .EXAMPLE
-   .\Audit-Deployment -ComputerName $computername -path c:\DRSMonitoring
+   Test-Deployment -ComputerName $computername
 
    Checks for registry key and value as well as config file at c:\DRSMonitoring
+
+.EXAMPLE
+   Get-childitem c:\monitoringfiles | foreach {Test-Deployment -computername ( ([xml] get-content $_).drsmonitoring.server.name)}
+
+   Tests the deployment state for every computer with a valid config.xml file in c:\monitoringfiles
 
 .INPUTS
    Computer Name and path to config file
