@@ -20,9 +20,9 @@ Load all
 .NOTES
 Written by the Kitton Mittons
 For the 2014 Winter Scripting Games
-Version 1.1
+Version 1.2
 Created on: 2/9/2014
-Last Modified: 2/12/2014
+Last Modified: 2/15/2014
 
 #>
 Param
@@ -131,9 +131,9 @@ Create unique config.xml files for each server according to the name listed in C
 .NOTES
 Written by the Kitton Mittons
 For the 2014 Winter Scripting Games
-Version 1.1
+Version 1.2
 Created on: 2/9/2014
-Last Modified: 2/12/2014
+Last Modified: 2/15/2014
 
 .INPUTS
 XML
@@ -193,9 +193,9 @@ Function Install-Config # Done -JM
 .NOTES
 Written by the Kitton Mittons
 For the 2014 Winter Scripting Games
-Version 1.1
+Version 1.3
 Created on: 2/9/2014
-Last Modified: 2/12/2014
+Last Modified: 2/15/2014
 
 #>
 param 
@@ -235,7 +235,7 @@ Catch [System.IO.DirectoryNotFoundException,Microsoft.PowerShell.Commands.CopyIt
 
 }
 
-Function Install-Key
+Function Install-Key # Done -JM
 {
 <#
 
@@ -252,13 +252,17 @@ Install-Key -ComputerName $computername
 Deploys registry key to the computer specified by the variable $computername
 
 .EXAMPLE
+$names = Get-childitem c:\monitoringfiles | foreach {([xml] get-content $_).drsmonitoring.server.name)}
+Install-Key -ComputerName $names
+
+Deploys registry settings for every server with a config file in C:\Monitoringfiles
 
 .NOTES
 Written by the Kitton Mittons
 For the 2014 Winter Scripting Games
 Version 1.1
 Created on: 2/9/2014
-Last Modified: 2/12/2014
+Last Modified: 2/15/2014
 
 #>
 [CmdletBinding(ConfirmImpact='Medium')]
@@ -271,6 +275,7 @@ param (
       HelpMessage="Enter a ComputerName or IP Address, accepts multiple ComputerNames")]             
       [Alias("__Server","PSComputerName")]
       [String[]]$ComputerName,
+
       # Enter a Credential object, like (Get-credential)
       [Parameter(
       HelpMessage="Enter a Credential object, like (Get-credential)")]
@@ -280,20 +285,22 @@ Begin
 {
   $Params = @{
     Scriptblock = {
-        Try {$VerbosePreference = $Using:VerbosePreference} Catch {}
+        Try {$VerbosePreference = $Using:VerbosePreference} Catch {Write-Verbose "Sending errors to the void!"}
         Switch (Test-path 'HKLM:\SOFTWARE\DRSmonitoring')
           {
             $true {
-                Write-Verbose "Test property and value registry"
+                Write-Verbose "Test property on registry key"
                 Try {
+                    Write-Verbose "Get registry value"
                     $monitoring = Get-ItemProperty -path HKLM:\SOFTWARE\DRSMonitoring -Name Monitoring -ErrorAction Stop
                   }
                 Catch {
+                    Write-Verbose "Unable to locate property on Key: Creating new property"
                     New-ItemProperty -Path 'HKLM:\SOFTWARE\DRSMonitoring' -PropertyType Dword -Value 1 -Name Monitoring
                   }
                 If($monitoring -ne 1) 
                   {
-                    Write-Verbose "Set Monitoring Value"
+                    Write-Verbose "Set Monitoring property value to 1"
                     set-ItemProperty -Path 'HKLM:\SOFTWARE\DRSMonitoring' -Value 1 -Name Monitoring
                   }
               }
@@ -336,7 +343,7 @@ End {
     }
 }
 
-Function Test-Config
+Function Test-Config # Done -JM -only one example :(
 {
 <#
 .SYNOPSIS
@@ -347,33 +354,38 @@ Function Test-Config
     If the hash values match, no action is taken, if the hash values differ it will 
 
 .EXAMPLE
-    Audit-Config -Path xxx -Algorithm yyy -Remediate
+    Audit-Config -Target \\Server01\c$\DRSMonitoring\config.xml -Path c:\MonitoringFiles\Server01.xml
 
 .NOTES
 Written by the Kitton Mittons
 For the 2014 Winter Scripting Games
 Version 1.1
 Created on: 2/9/2014
-Last Modified: 2/12/2014
+Last Modified: 2/15/2014
 
 #>
 
 param (
+    # Enter the path to the most current config.xml file
     [parameter(Mandatory)]
     [ValidateScript({(Test-Path $_ -PathType leaf) -and ($_.endwiths('.xml'))})]
     [String]$Path,
 
+    # Enter the path to the target XML file to test
     [parameter(Mandatory)]
     [ValidateScript({(Test-Path $_ -PathType Leaf) -and ($_.endwiths('.xml'))} )]
     [String]$Target,
 
+    # set this value if you'd like the function to automatically remediate any defferences found
     [switch]$Remediate
         )
+Write-Verbose "Chech for variations in config file"
 if (Compare-Object -ReferenceObject (Get-FileHash -Path $Target).SHA256 -DifferenceObject (Get-FileHash -Path $Path).SHA256) 
   {
     Switch ($Remediate)
       {
         $true { 
+            Write-Verbose "Overwrite config file @ $Target"
             Try {Copy-Item -Path $Path -Destination $Target -Force -ErrorAction Stop}
             Catch {
                 Write-Warning "Failed to overwrite $Target"
@@ -468,7 +480,7 @@ End
         }
     if ($local)
         {
-            Try {$params.Remove('ComputerName')} Catch {}
+            Try {$params.Remove('ComputerName')} Catch {Write-Verbose "Sending errors to the void!"}
             Invoke-Command @params | select -Property * -ExcludeProperty ps*
         }   
   }

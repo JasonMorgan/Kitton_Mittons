@@ -63,11 +63,11 @@ foreach ($c in $computername)
         $aud = Test-Deployment -ComputerName $args
         Write-Verbose "Update config if required"
         $current = $true
-        if (-not(Test-Config -Target (Join-Path -ChildPath \\$args -ChildPath $InstallPath)))
+        if (-not(Test-Config -Target (Join-Path -ChildPath \\$Computer -ChildPath $InstallPath)))
           {
             if ($Remediate)
               {
-                Try {Test-Config -Target (Join-Path -ChildPath \\$args -ChildPath $InstallPath) -Remediate -ErrorAction stop}
+                Try {Test-Config -Target (Join-Path -ChildPath \\$Computer -ChildPath $InstallPath) -Remediate -ErrorAction stop}
                 Catch {
                     Write-Error "Unable to update config.xml on $Computer"
                     $current = $false
