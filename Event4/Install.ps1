@@ -33,7 +33,7 @@ Param
         [String]$StorePath = "C:\MonitoringFiles",
         
         # Path to Module store
-        [string]$ModulePath = "$env:USERPROFILE\Documents\WindowsPowerShell\Modules\SecAudit"
+        [string]$ModulePath = "$env:USERPROFILE\Documents\WindowsPowerShell\Modules\Monitoring"
     )
 #region Initialize
 Write-Verbose "Determining root directory"
