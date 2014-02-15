@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Configuration>
+    <ViewDefinitions>
+        <View>
+            <Name>KittonMittons.Monitoring.State</Name>
+            <ViewSelectedBy>
+                <TypeName>KittonMittons.Monitoring.State</TypeName>
+            </ViewSelectedBy>
+             <ListControl>
+                <ListEntries>
+                    <ListEntry>
+                        <ListItems>
+                            <ListItem>
+                                <PropertyName>ComputerName</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>Last_Audit</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>ConfigExists</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>MonitoringKeyExists</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>MonitoringKeyCorrect</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>MonitoringKeyValue</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>ConfigFileCurrent</PropertyName>
+                            </ListItem>
+                        </ListItems>
+                    </ListEntry>
+                </ListEntries>
+            </ListControl>
+        </View>
+    </ViewDefinitions>
+</Configuration>

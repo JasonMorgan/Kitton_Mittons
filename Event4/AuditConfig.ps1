@@ -76,6 +76,8 @@ foreach ($c in $computername)
             else {$current = $false}
           }
         $aud | Add-Member -MemberType NoteProperty -Name ConfigFileCurrent -Value $current
+        $aud.PSObject.TypeNames.Insert(0,'KittonMittons.Monitoring.State')
+        $aud
       }
   }
 if ($ShowProgress)

@@ -1,6 +1,4 @@
-#requires -Version 3
-
-Function New-XMLConfig
+Function New-XMLConfig  # Done -JM
 {
 <#
 .SYNOPSIS
@@ -29,21 +27,21 @@ Last Modified: 2/12/2014
 #>
 Param
   (
-    #
+    # Enter the computername to be monitored
     [Parameter(Mandatory,
     ValueFromPipeline,
     ValueFromPipelineByPropertyName)]
     [Alias('Server')]
     [string]$ComputerName,
         
-    #
+    # Enter the IP of the Computer to be monitored
     [Parameter(Mandatory,
     ValueFromPipeline,
     ValueFromPipelineByPropertyName)]
     [Alias('IP')]
     [ipaddress]$IPAddress,
         
-    #
+    # Set the Value for Monitor CPU
     [Parameter(
     ValueFromPipeline,
     ValueFromPipelineByPropertyName)]
@@ -51,7 +49,7 @@ Param
     [ValidateSet('True','False',$null)]
     [string]$MonitorCPU,
         
-    #
+    # Set the Value for Monitor RAM
     [Parameter(
     ValueFromPipeline,
     ValueFromPipelineByPropertyName)]
@@ -59,7 +57,7 @@ Param
     [ValidateSet('True','False',$null)]
     [string]$MonitorRam,
         
-    #
+    # Set the Value for Monitor Disk
     [Parameter(
     ValueFromPipeline,
     ValueFromPipelineByPropertyName)]
@@ -67,7 +65,7 @@ Param
     [ValidateSet('True','False',$null)]
     [string]$MonitorDisk,
         
-    #
+    # Set the Value for Monitor Network
     [Parameter(
     ValueFromPipeline,
     ValueFromPipelineByPropertyName)]
@@ -77,6 +75,7 @@ Param
   )
 Begin
 {
+Write-Verbose "Create XML body"
 [xml]$xml = @"
 <?xml version="1.0" encoding="utf-8"?>
 <DRSmonitoring xmlns="http://schemas.drsmonitoring.org/metadata/2013/11">
@@ -95,6 +94,7 @@ Begin
 }
 Process
 {
+Write-Verbose "Create XML object"
 $xml.DRSmonitoring.Server.Name = $ComputerName
 Write-Debug "`$computername: $ComputerName"
 $xml.DRSmonitoring.Server.IPAddress = "$($IPAddress.IPAddressToString)"
@@ -111,7 +111,7 @@ $xml
 }
 }
 
-Function out-XMLFile
+Function out-XMLFile # Done -JM
 {
 <#
 .SYNOPSIS
@@ -161,11 +161,11 @@ Process
 }
 }
 
-Function Install-Config
+Function Install-Config # Done -JM
 {
 <#
 .SYNOPSIS
-   Deploys XML file for monitoring file.
+   Deploys XML file for DRSMonitoring.
 
 .DESCRIPTION
    Copies configuration file to target system.  If target directory is missing, function will 
@@ -174,9 +174,14 @@ Function Install-Config
    The target path for the file can be specified, but the default is C:\DrsMonitoring
 
 .EXAMPLE
-   Install-Config -ComputerName $computername
+   Install-Config -ComputerName Server1 -path C:\monitoringfiles\Server1.xml
 
    Deploys XML file to the computer specified by the variable $computername
+
+.EXAMPLE
+    Get-childitem c:\monitoringfiles | foreach {Install-config -computername ( ([xml] get-content $_).drsmonitoring.server.name) -Path $_ }
+
+    Deploys the appropriate config.xml file for every server with a config file in C:\Monitoringfiles
 
 .INPUTS
    ComputerName
@@ -207,21 +212,25 @@ param
 
     # Enter path to target config.xml
     [Parameter(Mandatory)]
+    [ValidateScript({ (Test-path -PathType Leaf -Path $_) -and ( $_.endswith('.xml') ) })]
     $Path 
   )
 $target = Join-Path -Path "\\$ComputerName" -ChildPath $($Destination.Replace(':','$'))
-#Copy file to server, test if copied ok, add error handle if unable to copy or create directory
+Write-Verbose "Checking Target directory"
+Write-Debug "`$target: $target"
 If (-not(Test-Path $target))
   {
+    Write-Verbose "Create Target directory"
     New-Item -Path $target -ItemType directory -Force | Out-Null
   }
 Try {
+    Write-Verbose "Copying file"
     Copy-item -Path $Path -Destination $target -ErrorAction Stop
     }
 
 Catch [System.IO.DirectoryNotFoundException,Microsoft.PowerShell.Commands.CopyItemCommand]
     {
-    Write-error "Wasn't able to copy the file, check to see if we have rights to copy a file"
+    Write-error "Wasn't able to copy the file, validate permissions and try again"
     }
 
 }
