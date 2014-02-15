@@ -9,26 +9,16 @@ If the directory does not exist, it is created, then a registry key is created w
 the Dr's Monitoring tool.
 
 .EXAMPLE
-C:\powershell\scripts\DeployConfig.ps1 -ComputerName Server01 -IpAddress 192.168.10.1 -MonitorCPU True -MonitorRam True -MonitorDisk True -MonitorNetwork False
+.\DeployConfig -path .\servers.csv
 
-Creates an .XML file with the desired configuration and deploys it to Server01 in the default folder, then sets the registry value.
-
-.Example
-C:\powershell\scripts\Import-csv .\servers.csv | DeployConfig.ps1
-
-Creates an .XML file for each server found in the servers.csv file and deploys it to each in the default folder, then sets the registry value.
-
-.Example
-C:\powershell\scripts\Import-csv .\servers.csv | DeployConfig.ps1 -Destination C:\ProgramFiles\DrsMonitoring
-
-Creates an .XML file for each server found in the servers.csv file and deploys in a custom location, rather than the default path of C:\DrsMonitoring.
+Read the Servers.csv file and deploy the config file and registry settings for each entry
 
 .NOTES
 Written by the Kitton Mittons
 For the 2014 Winter Scripting Games
-Version 1.0
+Version 1.3
 Created on: 2/14/2014
-Last Modified: 2/14/2014
+Last Modified: 2/15/2014
 
 #requires -Version 3
 
@@ -37,38 +27,47 @@ Last Modified: 2/14/2014
 Param
   (
     # Path to input csv file
-    [string]$path,
+    [Parameter(Mandatory)]
+    [ValidateScript({ (Test-Path -PathType leaf -Path $_) -and ($_.endswith('.csv')) })]
+    [string]$Path,
 
     # Install path for remote computers
     [String]$InstallPath = "C:\DRSMonitoring",
 
     # Path to config file store
+    [ValidateScript({Test-Path -PathType Container -path $_})]
     [string]$StorePath = "C:\MonitoringFiles",
 
-    #
+    # Set if you would like to view progress
     [switch]$ShowProgress
   )
 
 #region Opening
 Write-Verbose "Load Module"
 Try {Import-Module Monitoring}
-Catch {Throw "Unable to load Module file, verify that the MOnitoring.psm1 file has been loaded on this computer."}
+Catch {Throw "Unable to load Module file, verify that the Monitoring.psm1 file has been loaded on this computer."}
 $InstallPath = $InstallPath.replace(';','$')
 Write-Debug "`$installpath: $InstallPath "
+Try {
+    Write-Verbose "Load CSV"
+    $total = Import-Csv -Path $path
+  }
+Catch {Throw "Unable to load csv file @ $Path"}
 #endregion Opening
 
 #region Do work
 Write-Verbose "Building Config files"
 Try {
     $i = 0
-    Import-Csv -Path $path | Tee-Object -Variable Total | New-XMLConfig | foreach { 
+    $total | New-XMLConfig | foreach { 
         if ($ShowProgress)
           {
+            Write-Debug "Count is $($total.count)"
             $i ++
             $prog = @{
                 Activity = "Building Configs"
                 Status = "$i of $($total.count)"
-                PercentComplete = ($i/$total.count *100)
+                PercentComplete = ($i/($total.count) *100)
               }
             Write-Progress @prog
           }
@@ -117,7 +116,7 @@ try {
               }
             Write-Progress @prog
           }
-        Install-Key -ComputerName $t.server
+        Install-Key -ComputerName $t.server | Out-Null
       }
   }
 Catch 

@@ -84,7 +84,7 @@ Try {
         Copy-Item -Path $root\DRSMonitoring.ps1xml -Destination $ModulePath -Force -ErrorAction stop
         Copy-Item -Path $root\Servers.csv -Destination $Path -Force -ErrorAction stop
         Copy-Item -Path $root\DeployConfig.ps1 -Destination $Path -Force -ErrorAction stop
-        Copy-Item -Path $root\AuditCOnfig.ps1 -Destination $Path -Force -ErrorAction stop
+        Copy-Item -Path $root\AuditConfig.ps1 -Destination $Path -Force -ErrorAction stop
     }
 Catch
     {

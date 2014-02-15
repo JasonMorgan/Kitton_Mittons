@@ -210,7 +210,11 @@ param
     [parameter()]
     $Destination="c:\DrsMonitoring",
 
-    # Enter path to target config.xml
+    # Enter the name you want the file to take on the target server
+    [parameter()]
+    [string]$name = "Config.xml",
+
+    # Enter path to target file you want installed
     [Parameter(Mandatory)]
     [ValidateScript({ (Test-path -PathType Leaf -Path $_) -and ( $_.endswith('.xml') ) })]
     $Path 
@@ -225,7 +229,7 @@ If (-not(Test-Path $target))
   }
 Try {
     Write-Verbose "Copying file"
-    Copy-item -Path $Path -Destination $target -ErrorAction Stop
+    Copy-item -Path $Path -Destination $target\$name -ErrorAction Stop
     }
 
 Catch [System.IO.DirectoryNotFoundException,Microsoft.PowerShell.Commands.CopyItemCommand]
@@ -279,37 +283,51 @@ param (
       # Enter a Credential object, like (Get-credential)
       [Parameter(
       HelpMessage="Enter a Credential object, like (Get-credential)")]
-      [System.Management.Automation.PSCredential]$credential
+      [System.Management.Automation.PSCredential]$credential,
+
+      # The full Registry Key you want created on the target Server
+      [string]$Path = 'HKLM:\SOFTWARE\DRSmonitoring',
+
+      # The Name of the property you wish to set
+      [String]$Name = "Monitoring",
+
+      # The value you want set for the property
+      [String]$Value = 1,
+
+      # Specify the Property type
+      [string]$Type = "DWORD"
       )
 Begin 
 {
   $Params = @{
+    ArgumentList = $Path,$Type,$Name,$Value
     Scriptblock = {
+        Param ($Path,$Type,$Name,$Value)
         Try {$VerbosePreference = $Using:VerbosePreference} Catch {Write-Verbose "Sending errors to the void!"}
-        Switch (Test-path 'HKLM:\SOFTWARE\DRSmonitoring')
+        Switch (Test-path $Path)
           {
             $true {
                 Write-Verbose "Test property on registry key"
                 Try {
                     Write-Verbose "Get registry value"
-                    $monitoring = Get-ItemProperty -path HKLM:\SOFTWARE\DRSMonitoring -Name Monitoring -ErrorAction Stop
+                    $monitoring = Get-ItemProperty -path $Path -Name $Name -ErrorAction Stop
                   }
                 Catch {
                     Write-Verbose "Unable to locate property on Key: Creating new property"
-                    New-ItemProperty -Path 'HKLM:\SOFTWARE\DRSMonitoring' -PropertyType Dword -Value 1 -Name Monitoring
+                    New-ItemProperty -Path $Path -PropertyType $Type -Value $Value -Name $Name
                   }
                 If($monitoring -ne 1) 
                   {
                     Write-Verbose "Set Monitoring property value to 1"
-                    set-ItemProperty -Path 'HKLM:\SOFTWARE\DRSMonitoring' -Value 1 -Name Monitoring
+                    set-ItemProperty -Path $Path -Value $Value -Name $Name
                   }
               }
             $false {
                 write-verbose "Create key"
-                Try {New-Item -Path 'HKLM:\SOFTWARE\DRSMonitoring' -ErrorAction stop | Out-Null}
+                Try {New-Item -Path $Path -ErrorAction stop | Out-Null}
                 Catch {Throw "Unable to create Key on $ENV:COMPUTERNAME"}
                 Write-Verbose "Create Registry Value"
-                Try {New-ItemProperty -Path 'HKLM:\SOFTWARE\DRSMonitoring' -PropertyType Dword -Value 1 -Name Monitoring}
+                Try {New-ItemProperty -Path $Path -PropertyType $Type -Value $Value -Name $Name}
                 Catch {
                     Write-Error $_.exception.message
                     Write-Warning "Failed to set the Monitoring property on $ENV:COMPUTERNAME, please ensure you manually set the property value before continuing"
@@ -343,7 +361,7 @@ End {
     }
 }
 
-Function Test-Config # Done -JM -only one example :(
+Function Test-Config # Done -JM
 {
 <#
 .SYNOPSIS
@@ -368,12 +386,12 @@ Last Modified: 2/15/2014
 param (
     # Enter the path to the most current config.xml file
     [parameter(Mandatory)]
-    [ValidateScript({(Test-Path $_ -PathType leaf) -and ($_.endwiths('.xml'))})]
+    [ValidateScript({(Test-Path $_ -PathType leaf) -and ($_.endswith('.xml'))})]
     [String]$Path,
 
     # Enter the path to the target XML file to test
     [parameter(Mandatory)]
-    [ValidateScript({(Test-Path $_ -PathType Leaf) -and ($_.endwiths('.xml'))} )]
+    [ValidateScript({(Test-Path $_ -PathType Leaf) -and ($_.endswith('.xml'))} )]
     [String]$Target,
 
     # set this value if you'd like the function to automatically remediate any defferences found
@@ -454,7 +472,7 @@ Begin
         Scriptblock = {
             Try {$VerbosePreference = $Using:VerbosePreference} Catch {}
             Write-Verbose "Auditing deployment on $env:COMPUTERNAME"
-            [PSCustomObject]@{
+            $aud = [PSCustomObject]@{
                 ComputerName = $env:COMPUTERNAME
                 Last_Audit = Get-Date -Format g
                 ConfigExists = Test-Path -Path C:\drsmonitoring\config.xml
@@ -462,8 +480,9 @@ Begin
                 MonitoringKeyValue = (Get-ItemProperty -Path HKLM:\SOFTWARE\DRSmonitoring -ErrorAction SilentlyContinue).Monitoring
                 MonitoringKeyCorrect = (Get-ItemProperty -Path HKLM:\SOFTWARE\DRSmonitoring -ErrorAction SilentlyContinue).Monitoring -eq 1
                 }
-                        
-            }
+            $aud.PSObject.TypeNames.Insert(0,'KittonMittons.Monitoring.State')
+            $aud            
+          }
         }
     If ($credential) {$Params.Add('Credential',$credential)}
   }
@@ -481,12 +500,12 @@ End
     if (($Comps |measure).Count -gt 0)
         {
             $params.Add('ComputerName',$Comps)
-            Invoke-Command @params | select -Property * -ExcludeProperty ps*
+            Invoke-Command @params
         }
     if ($local)
         {
             Try {$params.Remove('ComputerName')} Catch {Write-Verbose "Sending errors to the void!"}
-            Invoke-Command @params | select -Property * -ExcludeProperty ps*
+            Invoke-Command @params
         }   
   }
 }

@@ -28,9 +28,6 @@
                             <ListItem>
                                 <PropertyName>MonitoringKeyValue</PropertyName>
                             </ListItem>
-                            <ListItem>
-                                <PropertyName>ConfigFileCurrent</PropertyName>
-                            </ListItem>
                         </ListItems>
                     </ListEntry>
                 </ListEntries>

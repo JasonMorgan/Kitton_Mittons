@@ -1,5 +1,28 @@
 ﻿<#
-AuditDeployment
+.SYNOPSIS
+Audit the deployment of the DRSMonitoring configurations
+
+.DESCRIPTION
+This script will audit one or more computers and, optionally, create a report based on it's findings.  
+If no report is created audit objects will be returned to the pipeline.  All actions in this script
+can be handled manually by using the test-* functions loaded in the monitoring module.
+
+.EXAMPLE
+.\AuditConfig.ps1 -computername Server01,Server02
+
+The audit objects for server01 and Server 02 will be displayed
+
+.EXAMPLE
+.\AuditConfig.ps1 -computername Server01,Server02,Server03 -report -path c:\report.html
+
+The servers listed will be audited and a report will be generated at c:\report.html
+
+.NOTES
+Written by the Kitton Mittons
+For the 2014 Winter Scripting Games
+Version 1.4
+Created on: 2/14/2014
+Last Modified: 2/15/2014
 
 #requires -Version 3
 #>
@@ -10,7 +33,7 @@ Param
     [Parameter(Mandatory,ParameterSetName="Default")]
     [Parameter(Mandatory,ParameterSetName="Report")]
     [Parameter(Mandatory,ParameterSetName="Remediate")]
-    [string[]]$computername,
+    [string[]]$ComputerName,
     
     # Path to config files directory
     [Parameter(ParameterSetName="Default")]
@@ -28,26 +51,27 @@ Param
     [Parameter(ParameterSetName="Remediate")]
     [switch]$Remediate,
 
-    # 
+    # Set this flag if you would like to view progress reports during the audit
     [Parameter(ParameterSetName="Default")]
     [Parameter(ParameterSetName="Report")]
     [Parameter(ParameterSetName="Remediate")]
     [switch]$ShowProgress,
 
-    #
+    # Set this flag if you would like to store the report as an html file
     [Parameter(ParameterSetName="Report")]
     [Switch]$Report,
 
-    #
+    # Enter the path for the HTML file
     [Parameter(Mandatory,
     ParameterSetName="Report")]
     [String]$Path
 )
+
 #region Opening
 Write-Verbose "Load Module"
 Try {Import-Module Monitoring}
-Catch {Throw "Unable to load Module file, verify that the MOnitoring.psm1 file has been loaded on this computer."}
-$InstallPath = $InstallPath.replace(';','$')
+Catch {Throw "Unable to load Module file, verify that the Monitoring.psm1 file has been loaded on this computer."}
+$InstallPath = $InstallPath.replace(':','$')
 Write-Debug "`$installpath: $InstallPath "
 #endregion Opening
 
@@ -60,10 +84,10 @@ foreach ($c in $computername)
     Start-Job -Name Test$i -ArgumentList $c,$InstallPath,$Remediate -ScriptBlock {
         Param ($Computer,$installpath,$Remediate)
         Write-Verbose "Build Audit object"
-        $aud = Test-Deployment -ComputerName $args
+        $aud = Test-Deployment -ComputerName $Computer
         Write-Verbose "Update config if required"
         $current = $true
-        if (-not(Test-Config -Target (Join-Path -ChildPath \\$Computer -ChildPath $InstallPath)))
+        if (-not(Test-Config -Target (Join-Path -Path \\$Computer -ChildPath $InstallPath) -Path C:\MonitoringFiles\$Computer.xml ))
           {
             if ($Remediate)
               {
@@ -76,9 +100,8 @@ foreach ($c in $computername)
             else {$current = $false}
           }
         $aud | Add-Member -MemberType NoteProperty -Name ConfigFileCurrent -Value $current
-        $aud.PSObject.TypeNames.Insert(0,'KittonMittons.Monitoring.State')
         $aud
-      }
+      } | Out-Null
   }
 if ($ShowProgress)
   {
@@ -86,8 +109,8 @@ if ($ShowProgress)
       {
         $prog = @{
             Activity = "Running Jobs"
-            Status = "$((get-job -Name Test* -State Completed).count) of $((Get-Job -Name Test*).Count) Complete" 
-            PercentComplete = (((get-job -Name Test* -State Completed).count / (Get-Job -Name Test*).Count) * 100 )
+            Status = "$((get-job -Name Test* | where State -like "Completed").count) of $((Get-Job -Name Test*).Count) Complete" 
+            PercentComplete = (((get-job -Name Test* | where State -like "Completed").count / (Get-Job -Name Test*).Count) * 100 )
           }
         Write-Progress @prog
       }
@@ -100,17 +123,23 @@ While ((get-job -Name Test*).State -contains "Running")
 #endregion Audit
 
 #region Report
+if ($Report)
+  {
 $html = @"
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-<title>Security Audit Report</title>
+<title>DRSMonitoring Report</title>
 </head><body>
-  $(get-job -Name Test* | receive-job | ConvertTo-Html -Fragment -as List | Out-String )
+  $(get-job -Name Test* | receive-job | 
+  ConvertTo-Html -Property ComputerName,Last_Audit,ConfigExists,MonitoringKeyExists,MonitoringKeyValue,MonitoringKeyCorrect,ConfigFileCurrent -Fragment -as List |
+  Out-String )
 </body></html>
 "@ 
 
-$html | Out-File -FilePath $Path
+    $html | Out-File -FilePath $Path -Force
+  }
+else {get-job -Name Test* | receive-job}
 #endregion Report
 
 #region Cleanup
