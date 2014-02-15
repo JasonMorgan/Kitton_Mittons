@@ -4,9 +4,8 @@ Install DRSMonitoring files to a computer
 
 .DESCRIPTION
 This script will copy all the required files for the Kitton Mittons' entry4 to any judge's computer.
-Ideally this will allow anyone judging to actually test the scripts prior to grading our entry. It
-seems this isn't always standard practice so we added the install back in to avoid a repeat of what 
-happened with our entry 3.
+
+This has been provided to assist the judges in very quickly running the modules and scripts provided on their own systems.
 
 .EXAMPLE
 \\server\share\installroot\install.ps1

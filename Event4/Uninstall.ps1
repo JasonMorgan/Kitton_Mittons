@@ -1,17 +1,17 @@
 ﻿<#
 .SYNOPSIS
-Install DRSMonitoring files to a computer
+Uninstall DRSMonitoring files from a computer
 
 .DESCRIPTION
-This script will copy all the required files for the Kitton Mittons' entry4 to any judge's computer.
-Ideally this will allow anyone judging to actually test the scripts prior to grading our entry. It
-seems this isn't always standard practice so we added the install back in to avoid a repeat of what 
-happened with our entry 3.
+This script will remove all the required files for the Kitton Mittons' entry4 from any judge's computer.
+
+This scripts allows you to easily revert your computer to the pre-testing state, and removes all Kitten Mittons items.
+
 
 .EXAMPLE
-\\server\share\installroot\install.ps1
+\\server\share\installroot\uninstall.ps1
 
-Deploys the entry 3 scripts from the share, \\server\share\installroot, to the local computer
+Removes the three scripts from your local computer.
 
 .NOTES
 Written by the Kitton Mittons
@@ -42,53 +42,24 @@ catch {Throw "Unable to establish Root Directory"}
 Write-Debug "`$root = $root"
 #endregion Initialize
 
-#region PrepInstall
-if (-not(Test-path $Path))
-    {
-        Write-Verbose "Creating script directory"
-        Try {New-Item -ItemType directory -Path $Path -Force | Out-Null}
-        Catch {Throw "Unable to create $Path"}
-    }
-else
-    {
-        Write-Verbose "Removing old install"
-        Get-ChildItem $Path | Remove-Item -Recurse
-    }
-if (-not(Test-path $StorePath))
-    {
-        Write-Verbose "Creating config store directory"
-        Try {New-Item -ItemType directory -Path $Path -Force | Out-Null}
-        Catch {Throw "Unable to create $Path"}
-    }
-else
-    {
-        Write-Verbose "Removing old configs"
-        Get-ChildItem $StorePath | Remove-Item -Recurse
-    }
-if (-not(Test-path $ModulePath))
-    {
-        Write-Verbose "Creating Module directory"
-        Try {New-Item -ItemType directory -Path $ModulePath -Force | Out-Null}
-        Catch {Throw "Unable to create $ModulePath"}
-    }
-else
-    {
-        Write-Verbose "Removing Legacy Modules"
-        Get-ChildItem $ModulePath | Remove-Item -Recurse
-    }
-#endregion PrepInstall
 
-#region CopyFiles
+#region RemoveFiles
 Try {
-        Copy-Item -Path $root\Monitoring.psm1 -Destination $ModulePath -Force -ErrorAction stop
-        Copy-Item -Path $root\Monitoring.psd1 -Destination $ModulePath -Force -ErrorAction stop
-        Copy-Item -Path $root\DRSMonitoring.ps1xml -Destination $ModulePath -Force -ErrorAction stop
-        Copy-Item -Path $root\Servers.csv -Destination $Path -Force -ErrorAction stop
-        Copy-Item -Path $root\DeployConfig.ps1 -Destination $Path -Force -ErrorAction stop
-        Copy-Item -Path $root\AuditCOnfig.ps1 -Destination $Path -Force -ErrorAction stop
+        Remove-Item -Path $ModulePath -Force -ErrorAction stop -Recurse -
+        Remove-Item -Path $StorePath -Force -ErrorAction stop -Recurse
+        Remove-Item -Path $Path -Force -ErrorAction stop -Recurse
     }
-Catch
+Catch [System.Management.Automation.ItemNotFoundException]
+
     {
-        Throw "Operation Aborted: Unable to copy install files"
+       "Path not found, already removed?" 
     }
-#endregion CopyFiles
+Catch 
+    {
+    Throw "Operation Aborted: Unable to remove files"
+    }
+
+#endregion RemoveFiles
+
+
+
